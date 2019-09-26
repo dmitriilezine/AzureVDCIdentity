@@ -12,5 +12,5 @@ There are number of services that are required to be present for this deployment
 	- Sample template is provided in "Logging" module
  - Log Analytics workspace must be present.
 	- Sample template is provided in "Logging" module
- - Secrets Key Vault must be present with passwords for accounts used for/by ADDS deployment and ADFS certificate
+ - Secrets Key Vault must be present with passwords for accounts used for/by deployment and ADFS certificate
 .
