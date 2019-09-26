@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "usageAttributionId": { "value": "00000000-0000-0000-0000-000000000000" },
+    "localadminPassword": { "value": "pipelineProvided" },
+    "domainjoinPassword": { "value": "pipelineProvided" },
+    "sqlAuthenticationPassword": { "value": "pipelineProvided" },
+    "SAURL": { "value": "pipelineProvided" },
+    "SASToken": { "value": "pipelineProvided" },
+    "SAKey": { "value": "pipelineProvided" },
+
+    "environment": { "value": "usscdev" },
+    "domainName": { "value": "contosodev.cloud" },
+    "localadminUsername": { "value": "LocalAdmin" },
+    "domainjoinUsername": { "value": "svc-domainjoin" },
+
+    "existingVirtualNetworkName": { "value": "vNet11" },
+    "existingVirtualNetworkResourceGroup": { "value": "usscdev-network-rg" },
+    "AADCsubnetName": { "value": "aadconnect" },
+
+    "virtualMachineSize": { "value": "Standard_E4s_v3" },
+    "aadc1VMName": { "value": "usscdevadc01" },
+    "aadc2VMName": { "value": "usscdevadc02" },
+    "aadcVM1IPAddress": { "value": "10.0.11.4" },
+    "aadcVM2IPAddress": { "value": "10.0.11.5" },
+
+    "diagnosticsStorageAccountName": { "value": "usscdevlogdiagsa1" },
+    "StorageAccountRG": { "value": "usscdev-logging-rg" },
+
+    "adeKeyVaultName": { "value": "usscdev1-aadc-ade-akv" },
+    "adeKeyVaultResourceGroup": { "value": "usscdev-aadc-rg" },
+    "aadcAvailabiltySet": { "value": "usscdev-aadc-as" },
+
+    "sqlConnectivityType": { "value": "Private" },
+    "sqlPortNumber": { "value": 1433 },
+    "sqlStorageDisksCount": { "value": 1 },
+    "sqlStorageWorkloadType": { "value": "GENERAL" },
+    "sqlStorageDisksConfigurationType": { "value": "NEW" },
+    "sqlStorageStartingDeviceId": { "value": 2 },
+    "sqlStorageDeploymentToken": { "value": 95820 },
+    "sqlAutopatchingDayOfWeek": { "value": "Sunday" },
+    "sqlAutopatchingStartHour": { "value": "2" },
+    "sqlAutopatchingWindowDuration": { "value": "60" },
+    "sqlAuthenticationLogin": { "value": "xaAADCSQL" },
+    "rServicesEnabled": { "value": "false" },
+    "licenseOffer": { "value": "SQL2017-WS2016" },
+
+
+    "laworkspaceref": { "value": "/subscriptions/<--LA-SUBSCRIPTION-ID-->/resourceGroups/tier0dev-logging-rg/providers/Microsoft.OperationalInsights/workspaces/tier0dev-la1" },
+
+    "kekVaultResourceGroup": { "value": "Tier0AKV" },
+    "adeKekKeyVaultName": { "value": "usscdev1-ade-kek-kv" },
+    "kek-url": { "value": "<--AADC-KEK-URL-->" },
+
+    "updateManagementTimeADC01": { "value": "WeeklySat7pm" },
+    "updateManagementTimeADC02": { "value": "WeeklySat7pm" },
+
+    "RunSQLExtensionDeployment": { "value": "YES" },
+    "runSQLStorageUpdateSettings": { "value": "YES" }
+
+  }
+}

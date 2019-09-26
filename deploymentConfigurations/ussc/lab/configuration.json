@@ -1,0 +1,10 @@
+{
+  "tier0prefix": "tier0lab",
+  "prefix": "ussclab",
+  "location": "southcentralus",
+  "laworkspacelocation": "eastus",
+  "umtimezone": "America/Chicago",
+  "aaname": "{tier0prefix}-mgmtaa",
+  "adekv": "keyvaultWithSoftDelete.json"
+
+}

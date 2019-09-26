@@ -1,0 +1,117 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM name"
+      }
+    },
+    "sqlConnectivityType": {
+      "type": "string"
+    },
+    "sqlPortNumber": {
+      "type": "int"
+    },
+    "sqlStorageDisksCount": {
+      "type": "int"
+    },
+    "sqlStorageWorkloadType": {
+      "type": "string"
+    },
+    "sqlStorageDisksConfigurationType": {
+      "type": "string"
+    },
+    "sqlStorageStartingDeviceId": {
+      "type": "int"
+    },
+    "sqlStorageDeploymentToken": {
+      "type": "int"
+    },
+    "sqlAutopatchingDayOfWeek": {
+      "type": "string"
+    },
+    "sqlAutopatchingStartHour": {
+      "type": "string"
+    },
+    "sqlAutopatchingWindowDuration": {
+      "type": "string"
+    },
+    "sqlAuthenticationLogin": {
+      "type": "string"
+    },
+    "sqlAuthenticationPassword": {
+      "type": "securestring"
+    },
+    "rServicesEnabled": {
+      "type": "string"
+    },
+    "runSQLStorageUpdateSettings": {
+      "type": "string",
+      "defaultValue": "NO"
+    }
+  },
+  "variables": {
+
+    "SQLStorageUpdateSettingsDefault": {
+      "DiskCount": "[parameters('sqlStorageDisksCount')]",
+      "NumberOfColumns": "[parameters('sqlStorageDisksCount')]",
+      "StartingDeviceID": "[parameters('sqlStorageStartingDeviceId')]",
+      "DiskConfigurationType": "[parameters('sqlStorageDisksConfigurationType')]"
+    }
+
+  },
+
+  "resources": [
+
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('VMName'), '/SqlIaasExtension')]",
+      "location": "[resourceGroup().location]",
+
+      "properties": {
+        "type": "SqlIaaSAgent",
+        "publisher": "Microsoft.SqlServer.Management",
+        "typeHandlerVersion": "2.0",
+        "autoUpgradeMinorVersion": "true",
+        "settings": {
+          "AutoTelemetrySettings": {
+            "Region": "[resourceGroup().location]"
+          },
+          "AutoPatchingSettings": {
+            "PatchCategory": "WindowsMandatoryUpdates",
+            "Enable": true,
+            "DayOfWeek": "[parameters('sqlAutopatchingDayOfWeek')]",
+            "MaintenanceWindowStartingHour": "[parameters('sqlAutopatchingStartHour')]",
+            "MaintenanceWindowDuration": "[parameters('sqlAutopatchingWindowDuration')]"
+          },
+          "KeyVaultCredentialSettings": {
+            "Enable": false,
+            "CredentialName": ""
+          },
+          "ServerConfigurationsManagementSettings": {
+            "SQLConnectivityUpdateSettings": {
+              "ConnectivityType": "[parameters('sqlConnectivityType')]",
+              "Port": "[parameters('sqlPortNumber')]"
+            },
+            "SQLWorkloadTypeUpdateSettings": {
+              "SQLWorkloadType": "[parameters('sqlStorageWorkloadType')]"
+            },
+            "SQLStorageUpdateSettings": "[if(equals(parameters('runSQLStorageUpdateSettings'), 'YES'), variables('SQLStorageUpdateSettingsDefault'), json('null'))]",
+
+            "AdditionalFeaturesServerConfigurations": {
+              "IsRServicesEnabled": "[parameters('rServicesEnabled')]"
+            }
+          }
+        },
+        "protectedSettings": {
+          "SQLAuthUpdateUserName": "[parameters('sqlAuthenticationLogin')]",
+          "SQLAuthUpdatePassword": "[parameters('sqlAuthenticationPassword')]"
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

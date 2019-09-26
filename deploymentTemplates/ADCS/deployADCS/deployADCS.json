@@ -1,0 +1,93 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of ADCS Server"
+      }
+    },
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The domain name"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the DA"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the DA"
+      }
+    },
+    "assetLocationStorageAccount": {
+      "type": "string",
+      "metadata": {
+        "description": "The location of resources that the script is dependent on such as linked templates and DSC modules"
+      }
+    },
+    "storageAccountSASTokenviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SAS for the Storage account"
+      }
+    },
+    "CACommonName": {
+      "type": "string",
+      "metadata": {
+        "description": "CA Common Name"
+      }
+    }
+
+  },
+  "variables": {
+    "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
+    "domainSuffix": "[split(parameters('domainName'),'.')[1]]",
+    "DSDomainDN": "[concat('DC=',variables('shortDomainName'),',DC=',variables('domainSuffix'))]",
+    "ModulesURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/DeployADCS.zip')]",
+    "ConfigurationFunction": "InstallCA.ps1\\InstallADCS"
+  },
+  "resources": [
+    {
+      "name": "[concat(parameters('VMName'),'/InstallADCS')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "properties": {
+        "publisher": "Microsoft.Powershell",
+        "type": "DSC",
+        "typeHandlerVersion": "2.8",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "modulesUrl": "[variables('ModulesURL')]",
+          "configurationFunction": "[variables('ConfigurationFunction')]",
+          "SasToken": "[parameters('storageAccountSASTokenviaKeyvault')]",
+          "properties": {
+            "domainName": "[parameters('domainName')]",
+            "CACommonName": "[parameters('CACommonName')]",
+            "DSDomainDN": "[variables('DSDomainDN')]",
+            "CAName": "[parameters('VMName')]",
+            "shortDomainName": "[variables('shortDomainName')]",
+            "adminCreds": {
+              "userName": "[parameters('adminUserName')]",
+              "password": "PrivateSettingsRef:adminPassword"
+            }
+          }
+        },
+        "protectedSettings": {
+          "items": {
+            "adminPassword": "[parameters('adminPassword')]",
+            "configurationUrlSasToken": "[parameters('storageAccountSASTokenviaKeyvault')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

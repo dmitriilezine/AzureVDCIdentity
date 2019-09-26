@@ -1,0 +1,46 @@
+dn: CN=AzurePAW HGS,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=com
+changetype: add
+cn: AzurePAW HGS
+displayName: AzurePAW HGS
+distinguishedName: 
+ CN=AzurePAW HGS,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN
+ =Configuration,DC=domain,DC=com
+dSCorePropagationData: 16010101000000.0Z
+dSCorePropagationData: 16090118144232.0Z
+flags: 131680
+instanceType: 4
+msPKI-Cert-Template-OID: 
+ 1.3.6.1.4.1.311.21.8.11120886.11787408.3427215.7486231.2950219.193.14750111.13
+ 988880
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.5.7.3.1
+msPKI-Certificate-Name-Flag: 1
+msPKI-Enrollment-Flag: 0
+msPKI-Minimal-Key-Size: 2048
+msPKI-Private-Key-Flag: 84279440
+msPKI-RA-Application-Policies: 
+ msPKI-Asymmetric-Algorithm`PZPWSTR`RSA`msPKI-Hash-Algorithm`PZPWSTR`SHA256`msP
+ KI-Key-Usage`DWORD`16777215`msPKI-Symmetric-Algorithm`PZPWSTR`3DES`msPKI-Symme
+ tric-Key-Length`DWORD`168`
+msPKI-RA-Signature: 0
+msPKI-Template-Minor-Revision: 13
+msPKI-Template-Schema-Version: 4
+name: AzurePAW HGS
+objectCategory: 
+ CN=PKI-Certificate-Template,CN=Schema,CN=Configuration,DC=domain,DC=com
+objectClass: top
+objectClass: pKICertificateTemplate
+pKICriticalExtensions: 2.5.29.7
+pKICriticalExtensions: 2.5.29.15
+pKIDefaultKeySpec: 1
+pKIExpirationPeriod:: AEA5hy7h/v8=
+pKIExtendedKeyUsage: 1.3.6.1.5.5.7.3.1
+pKIKeyUsage:: sA==
+pKIMaxIssuingDepth: 0
+pKIOverlapPeriod:: AICmCv/e//8=
+revision: 100
+showInAdvancedViewOnly: TRUE
+uSNChanged: 16506
+uSNCreated: 15164
+whenChanged: 20180309022937.0Z
+whenCreated: 20180308232210.0Z
+

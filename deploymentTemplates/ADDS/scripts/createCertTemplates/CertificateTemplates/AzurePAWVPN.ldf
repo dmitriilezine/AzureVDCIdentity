@@ -1,0 +1,45 @@
+dn: CN=AzurePAW VPN,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=com
+changetype: add
+cn: AzurePAW VPN
+displayName: AzurePAW VPN
+distinguishedName: 
+ CN=AzurePAW VPN,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=
+ Configuration,DC=domain,DC=com
+dSCorePropagationData: 16010101000000.0Z
+flags: 131642
+instanceType: 4
+msPKI-Cert-Template-OID: 
+ 1.3.6.1.4.1.311.21.8.9569147.14123146.13911486.15825583.3782508.223.12903111.7
+ 556447
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.5.7.3.2
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.5.7.3.4
+msPKI-Certificate-Application-Policy: 1.3.6.1.4.1.311.10.3.4
+msPKI-Certificate-Name-Flag: 1
+msPKI-Enrollment-Flag: 1
+msPKI-Minimal-Key-Size: 2048
+msPKI-Private-Key-Flag: 101056784
+msPKI-RA-Signature: 0
+msPKI-Template-Minor-Revision: 4
+msPKI-Template-Schema-Version: 4
+name: AzurePAW VPN
+objectCategory: 
+ CN=PKI-Certificate-Template,CN=Schema,CN=Configuration,DC=domain,DC=com
+objectClass: top
+objectClass: pKICertificateTemplate
+pKICriticalExtensions: 2.5.29.7
+pKICriticalExtensions: 2.5.29.15
+pKIDefaultCSPs: 1,Microsoft Enhanced Cryptographic Provider v1.0
+pKIDefaultKeySpec: 1
+pKIExpirationPeriod:: AEA5hy7h/v8=
+pKIExtendedKeyUsage: 1.3.6.1.5.5.7.3.2
+pKIExtendedKeyUsage: 1.3.6.1.5.5.7.3.4
+pKIExtendedKeyUsage: 1.3.6.1.4.1.311.10.3.4
+pKIKeyUsage:: oAA=
+pKIMaxIssuingDepth: 0
+pKIOverlapPeriod:: AICmCv/e//8=
+revision: 100
+showInAdvancedViewOnly: TRUE
+uSNChanged: 16445
+uSNCreated: 16442
+whenChanged: 20180313062056.0Z
+whenCreated: 20180313061822.0Z

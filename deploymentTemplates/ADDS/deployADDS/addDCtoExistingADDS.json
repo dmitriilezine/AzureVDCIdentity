@@ -1,0 +1,100 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dc2VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "VM name"
+      }
+    },
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The domain name"
+      }
+    },
+   "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new VMs and Domain"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VMs and Domain"
+      }
+    },
+    "dsrmPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for DSRM for ADDS"
+      }
+    },
+    "adConfigurationFunction": {
+      "type": "string",
+      "metadata": {
+        "description": "Configuration Function value"
+      }
+    },
+    "NonADDSDNSIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS IP Address"
+      }
+    },
+    "addsModuleURL": {
+      "type": "string",
+      "metadata": {
+        "description": "DSC ZIP file for ADDS installation"
+      }
+    },
+    "storageAccountSASTokenviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SAS for the Storage account"
+      }
+    }
+  },
+  "variables": {  },
+  "resources": [
+    {
+      "name": "[concat(parameters('dc2VMName'),'/InstallAdditionalDomainController')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "properties": {
+        "publisher": "Microsoft.Powershell",
+        "type": "DSC",
+        "typeHandlerVersion": "2.8",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "modulesUrl": "[parameters('addsModuleURL')]",
+          "configurationFunction": "[parameters('adConfigurationFunction')]",
+          "SasToken": "[parameters('storageAccountSASTokenviaKeyvault')]",
+          "properties": {
+            "domainName": "[parameters('domainName')]",
+            "DNSServer": "[parameters('NonADDSDNSIPAddress')]",
+
+            "adminCreds": {
+              "userName": "[parameters('adminUserName')]",
+              "password": "PrivateSettingsRef:adminPassword"
+            },
+            "dsrmCreds": {
+              "userName": "[parameters('adminUserName')]",
+              "password": "PrivateSettingsRef:dsrmPassword"
+            }
+          }
+        },
+        "protectedSettings": {
+          "items": {
+            "adminPassword": "[parameters('adminPassword')]",
+            "dsrmPassword": "[parameters('dsrmPassword')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

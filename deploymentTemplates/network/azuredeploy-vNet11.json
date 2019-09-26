@@ -1,0 +1,402 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify the name for the vNet."
+      }
+    },
+    "vNetAddressRange1": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for vNet"
+      }
+    },
+    "vNetAddressRange2": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for vNet"
+      }
+    },
+    "DomainControllersSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for Domain Controller subnet"
+      }
+    },
+    "JumpServerSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for JumpServer subnet"
+      }
+    },
+    "RDSCbGwSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for RDS subnet, Connecttion Broker and Gateway"
+      }
+    },
+    "ADFSSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for ADFS subnet"
+      }
+    },
+    "WAPSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for ADFS Proxy subnet"
+      }
+    },
+    "RDSSessionHostSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for RDS Session Hosts subnet"
+      }
+    },
+    "AADApProxySubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for AAD Proxy subnet"
+      }
+    },
+    "DNSSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for DNS server subnet"
+      }
+    },
+    "AADConnectSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for AAD Connect server subnet"
+      }
+    },
+    "TestADDSSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for Test ADDS subnet"
+      }
+    },
+    "GatewaySubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for Gateway subnet"
+      }
+    },
+    "BastionHostSubnet": {
+      "type": "string",
+      "metadata": {
+        "description": "Address range for Bastion Host subnet"
+      }
+    },
+    "DNSserverIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify IP addess of the DNS server to be used by vNet"
+      }
+    },
+    "SAURL": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account for scripts and JSON"
+      },
+      "defaultValue": "https://XXXXXXX.blob.core.windows.net"
+    },
+    "SASToken": {
+      "type": "string",
+      "metadata": {
+        "description": "SAS Token for Storage account"
+      }
+    }
+  },
+  "variables": {
+
+    "assetLocation": "[parameters('SAURL')]",
+
+    "sourceClientIP": "127.0.0.1",
+    "dnsServerIpAddress": "[parameters('DNSserverIPAddress')]",
+
+    "vnetTemplateURL": "[concat(variables('assetLocation'),'/scripts/vNet/vNetDeployment.json',parameters('SASToken'))]",
+    "nsgTemplateURL": "[concat(variables('assetLocation'),'/scripts/vNet/nsgDeployment-vNet11.json',parameters('SASToken'))]",
+
+    "deployVNet": "DeployVNet",
+    "deployVNetId": "[concat('Microsoft.Resources/deployments/', variables('deployVNet'))]",
+    "deployNSGs": "DeployNSGs",
+    "deployNSGsId": "[concat('Microsoft.Resources/deployments/', variables('deployNSGs'))]",
+
+    "dnsServerNSGName": "[concat('DNSServer-NSG-',resourceGroup().name)]",
+    "dnsServerNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('dnsServerNSGName'))]",
+    "addsNSGName": "[concat('DomainControllers-NSG-',resourceGroup().name)]",
+    "addsNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('addsNSGName'))]",
+    "jumpserverNSGName": "[concat('JumpServer-NSG-',resourceGroup().name)]",
+    "jumpserverNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('jumpserverNSGName'))]",
+    "rdsNSGName": "[concat('RDS-NSG-',resourceGroup().name)]",
+    "rdsNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('rdsNSGName'))]",
+    "aadProxyNSGName": "[concat('AADApProxy-NSG-',resourceGroup().name)]",
+    "aadProxyNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('aadProxyNSGName'))]",
+    "adfsNSGName": "[concat('ADFS-NSG-',resourceGroup().name)]",
+    "adfsNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('adfsNSGName'))]",
+    "adfsProxyNSGName": "[concat('ADFSProxy-NSG-',resourceGroup().name)]",
+    "adfsProxyNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('adfsProxyNSGName'))]",
+    "rdshostsNSGName": "[concat('RDSHosts-NSG-',resourceGroup().name)]",
+    "rdshostsNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('rdshostsNSGName'))]",
+    "aadConnectNSGName": "[concat('AADConnect-NSG-',resourceGroup().name)]",
+    "aadConnectNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('aadConnectNSGName'))]",
+    "testADDSNSGName": "[concat('testADDS-NSG-',resourceGroup().name)]",
+    "testADDSNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('testADDSNSGName'))]",
+
+    "virtualNetworkName": "[parameters('virtualNetworkName')]",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+    "dnsServerSubnetName": "DNSServerSubnet",
+    "dnsServerSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('dnsServerSubnetName'))]",
+    "addsSubnetName": "adds",
+    "addsSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('addsSubnetName'))]",
+    "jumpserverSubnetName": "JumpServerSubnet",
+    "jumpserverSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('jumpserverSubnetName'))]",
+    "rdsSubnetName": "adrds",
+    "rdsSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('rdsSubnetName'))]",
+    "aadProxySubnetName": "aadApProxySubnet",
+    "aadProxySubnetID": "[concat(variables('vnetID'),'/subnets/',variables('aadProxySubnetName'))]",
+    "adfsSubnetName": "adfs",
+    "adfsSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('adfsSubnetName'))]",
+    "adfsProxySubnetName": "adwap",
+    "adfsProxySubnetID": "[concat(variables('vnetID'),'/subnets/',variables('adfsProxySubnetName'))]",
+    "rdshostsSubnetName": "rdsHostsSubnet",
+    "rdshostsSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('rdshostsSubnetName'))]",
+    "aadConnectSubnetName": "aadconnect",
+    "aadConnectSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('aadConnectSubnetName'))]",
+    "testADDSSubnetName": "testADDSSubnet",
+    "testADDSSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('testADDSSubnetName'))]",
+    "gatewaySubnetName": "GatewaySubnet",
+    "gatewaySubnetID": "[concat(variables('vnetID'),'/subnets/',variables('gatewaySubnetName'))]",
+    "bastionHostSubnetName": "AzureBastionSubnet",
+    "bastionHostSubnetID": "[concat(variables('vnetID'),'/subnets/',variables('bastionHostSubnetName'))]",
+
+    "subnets": [
+      {
+        "name": "[variables('dnsServerSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('DNSSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('dnsServerNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('addsSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('DomainControllersSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('addsNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('jumpserverSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('JumpServerSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('jumpserverNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('rdsSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('RDSCbGwSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('rdsNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('adfsSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('ADFSSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('adfsNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('adfsProxySubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('WAPSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('adfsProxyNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('rdshostsSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('RDSSessionHostSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('rdshostsNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('aadProxySubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('AADApProxySubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('aadProxyNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('aadConnectSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('AADConnectSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('aadConnectNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('testADDSSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('TestADDSSubnet')]",
+          "networkSecurityGroup": {
+            "id": "[variables('testADDSNSGID')]"
+          },
+          "serviceEndpoints": [
+            {
+              "service": "Microsoft.Storage"
+            }
+          ]
+        }
+      },
+      {
+        "name": "[variables('gatewaySubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('GatewaySubnet')]"
+        }
+      },
+      {
+        "name": "[variables('bastionHostSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('BastionHostSubnet')]"
+        }
+      }
+    ]
+  },
+  "resources": [
+
+    {
+      "name": "[variables('deployNSGs')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": { "uri": "[variables('nsgTemplateURL')]" },
+        "parameters": {
+          "virtualNetworkName": { "value": "[variables('virtualNetworkName')]" },
+          "subnets": { "value": "[ variables('subnets')]" },
+          "vNetID": { "value": "[variables('vnetID')]" },
+          "dnsServerNSGName": { "value": "[variables('dnsServerNSGName')]" },
+          "dnsServerSubnetName": { "value": "[variables('dnsServerSubnetName')]" },
+          "dnsServerSubnetId": { "value": "[variables('dnsServerSubnetID')]" },
+          "beNSGName": { "value": "[variables('addsNSGName')]" },
+          "feNSGName": { "value": "[variables('jumpserverNSGName')]" },
+          "pawNSGName": { "value": "[variables('rdsNSGName')]" },
+          "aadProxyNSGName": { "value": "[variables('aadProxyNSGName')]" },
+          "adfsNSGName": { "value": "[variables('adfsNSGName')]" },
+          "adfsProxyNSGName": { "value": "[variables('adfsProxyNSGName')]" },
+          "beSubnetName": { "value": "[variables('addsSubnetName')]" },
+          "feSubnetName": { "value": "[variables('jumpserverSubnetName')]" },
+          "pawSubnetName": { "value": "[variables('rdsSubnetName')]" },
+          "aadProxySubnetName": { "value": "[variables('aadProxySubnetName')]" },
+          "adfsSubnetName": { "value": "[variables('adfsSubnetName')]" },
+          "adfsProxySubnetName": { "value": "[variables('adfsProxySubnetName')]" },
+          "beSubnetId": { "value": "[variables('addsSubnetID')]" },
+          "feSubnetId": { "value": "[variables('jumpserverSubnetID')]" },
+          "pawSubnetId": { "value": "[variables('rdsSubnetID')]" },
+          "aadProxySubnetId": { "value": "[variables('aadProxySubnetID')]" },
+          "adfsSubnetId": { "value": "[variables('adfsSubnetID')]" },
+          "adfsProxySubnetId": { "value": "[variables('adfsProxySubnetID')]" },
+          "rdshostsNSGName": { "value": "[variables('rdshostsNSGName')]" },
+          "rdshostsSubnetName": { "value": "[variables('rdshostsSubnetName')]" },
+          "rdshostsSubnetId": { "value": "[variables('rdshostsSubnetID')]" },
+          "aadConnectNSGName": { "value": "[variables('aadConnectNSGName')]" },
+          "aadConnectSubnetName": { "value": "[variables('aadConnectSubnetName')]" },
+          "aadConnectSubnetId": { "value": "[variables('aadConnectSubnetID')]" },
+          "testADDSNSGName": { "value": "[variables('testADDSNSGName')]" },
+          "testADDSSubnetName": { "value": "[variables('testADDSSubnetName')]" },
+          "testADDSSubnetId": { "value": "[variables('testADDSSubnetID')]" },
+
+          "sourceClientIP": { "value": "[variables('sourceClientIP')]" }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployVNet')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('deployNSGsId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": { "uri": "[variables('vnetTemplateURL')]" },
+        "parameters": {
+          "virtualNetworkName": { "value": "[variables('virtualNetworkName')]" },
+          "subnets": { "value": "[ variables('subnets') ]" },
+          "virtualNetworkAddressRange1": { "value": "[parameters('vNetAddressRange1')]" },
+          "virtualNetworkAddressRange2": { "value": "[parameters('vNetAddressRange2')]" },
+          "dnsServerAddress": { "value": [ "[variables('dnsServerIpAddress')]" ] }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

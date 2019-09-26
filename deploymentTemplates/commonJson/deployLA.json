@@ -1,0 +1,45 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM Name"
+      }
+    },
+    "laworkspaceref": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM Name"
+      }
+    }
+
+  },
+
+  "variables": {},
+  "resources": [
+
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('vmName'),'/OMSExtension')]",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      
+      "properties": {
+        "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+        "type": "MicrosoftMonitoringAgent",
+        "typeHandlerVersion": "1.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "workspaceId": "[reference(parameters('laworkspaceref'),'2017-04-26-preview', 'Full').properties.customerId]"
+        },
+        "protectedSettings": {
+          "workspaceKey": "[listKeys(parameters('laworkspaceref'), '2015-03-20').primarySharedKey]"
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

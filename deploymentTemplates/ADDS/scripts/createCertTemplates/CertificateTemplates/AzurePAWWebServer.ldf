@@ -1,0 +1,43 @@
+dn: CN=AzurePAW Web Server,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=com
+changetype: add
+cn: AzurePAW Web Server
+displayName: AzurePAW Web Server
+distinguishedName: 
+ CN=AzurePAW Web Server,CN=Certificate Templates,CN=Public Key Services,CN=Servic
+ es,CN=Configuration,DC=domain,DC=com
+dSCorePropagationData: 20180308221642.0Z
+dSCorePropagationData: 16010101000000.0Z
+flags: 131649
+instanceType: 4
+msPKI-Cert-Template-OID: 
+ 1.3.6.1.4.1.311.21.8.16543349.11527688.13058950.6857532.5288576.177.5053452.55
+ 85846
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.5.7.3.1
+msPKI-Certificate-Name-Flag: 1
+msPKI-Enrollment-Flag: 0
+msPKI-Minimal-Key-Size: 2048
+msPKI-Private-Key-Flag: 84214016
+msPKI-RA-Signature: 0
+msPKI-Template-Minor-Revision: 3
+msPKI-Template-Schema-Version: 4
+name: AzurePAW Web Server
+objectCategory: 
+ CN=PKI-Certificate-Template,CN=Schema,CN=Configuration,DC=domain,DC=com
+objectClass: top
+objectClass: pKICertificateTemplate
+pKICriticalExtensions: 2.5.29.15
+pKIDefaultCSPs: 2,Microsoft DH SChannel Cryptographic Provider
+pKIDefaultCSPs: 1,Microsoft RSA SChannel Cryptographic Provider
+pKIDefaultKeySpec: 1
+pKIExpirationPeriod:: AIByDl3C/f8=
+pKIExtendedKeyUsage: 1.3.6.1.5.5.7.3.1
+pKIKeyUsage:: oAA=
+pKIMaxIssuingDepth: 0
+pKIOverlapPeriod:: AICmCv/e//8=
+revision: 100
+showInAdvancedViewOnly: TRUE
+uSNChanged: 14630
+uSNCreated: 14627
+whenChanged: 20180308221649.0Z
+whenCreated: 20180308221642.0Z
+

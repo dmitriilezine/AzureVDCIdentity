@@ -1,0 +1,229 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "aaname": {
+      "type": "string",
+      "metadata": {
+        "description": "Automation account name"
+      }
+    },
+    "hubSubscriptionId": {
+      "type": "array",
+      "metadata": {
+        "description": "Subscription ID of the SS Hub"
+      }
+    },
+    "existingSchedules": {
+      "type": "array",
+      "metadata": {
+        "description": "Array of automation schedules that already exists in the account"
+      }
+    },
+    "umstartdate": {
+      "type": "string",
+      "metadata": {
+        "description": "Format: yyyy/mm/dd hh:mm:ss AM/PM, start time must be at least 5 minutes after the time you create the schedule"
+      }
+
+    },
+    "umtimezone": {
+      "type": "string",
+      "metadata": {
+        "description": "Time zone format is based on IANA ID and restricted to below values only for now, full list at: https://docs.microsoft.com/en-us/rest/api/maps/timezone/gettimezoneenumwindows"
+      },
+      "defaultValue": "America/Chicago",
+      "allowedValues": [
+        "America/New_York",
+        "America/Chicago",
+        "America/Los_Angeles",
+        "Europe/London",
+        "Europe/Budapest",
+        "Asia/Bangkok",
+        "Asia/Singapore"
+      ]
+    }
+  },
+  "variables": {
+    "allSchedules": [
+      {
+        "name": "2ndSat7pm",
+        "schedule": {
+          "startTime": "[parameters('umstartdate')]",
+          "isEnabled": true,
+          "interval": 1,
+          "frequency": "Month",
+          "timeZone": "[parameters('umtimezone')]",
+          "advancedSchedule": {
+            "monthlyOccurrences": [
+              {
+                "occurrence": 2,
+                "day": "Saturday"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "3rdSat7pm",
+        "schedule": {
+          "startTime": "[parameters('umstartdate')]",
+          "isEnabled": true,
+          "interval": 1,
+          "frequency": "Month",
+          "timeZone": "[parameters('umtimezone')]",
+          "advancedSchedule": {
+            "monthlyOccurrences": [
+              {
+                "occurrence": 3,
+                "day": "Saturday"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "4thSat7pm",
+        "schedule": {
+          "startTime": "[parameters('umstartdate')]",
+          "isEnabled": true,
+          "interval": 1,
+          "frequency": "Month",
+          "timeZone": "[parameters('umtimezone')]",
+          "advancedSchedule": {
+            "monthlyOccurrences": [
+              {
+                "occurrence": 4,
+                "day": "Saturday"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "2ndSun7pm",
+        "schedule": {
+          "startTime": "[parameters('umstartdate')]",
+          "isEnabled": true,
+          "interval": 1,
+          "frequency": "Month",
+          "timeZone": "[parameters('umtimezone')]",
+          "advancedSchedule": {
+            "monthlyOccurrences": [
+              {
+                "occurrence": 2,
+                "day": "Sunday"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "3rdSun7pm",
+        "schedule": {
+          "startTime": "[parameters('umstartdate')]",
+          "isEnabled": true,
+          "interval": 1,
+          "frequency": "Month",
+          "timeZone": "[parameters('umtimezone')]",
+          "advancedSchedule": {
+            "monthlyOccurrences": [
+              {
+                "occurrence": 3,
+                "day": "Sunday"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "4thSun7pm",
+        "schedule": {
+          "startTime": "[parameters('umstartdate')]",
+          "isEnabled": true,
+          "interval": 1,
+          "frequency": "Month",
+          "timeZone": "[parameters('umtimezone')]",
+          "advancedSchedule": {
+            "monthlyOccurrences": [
+              {
+                "occurrence": 4,
+                "day": "Sunday"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "WeeklySat7pm",
+        "schedule": {
+          "startTime": "[parameters('umstartdate')]",
+          "isEnabled": true,
+          "interval": 1,
+          "frequency": "Week",
+          "timeZone": "[parameters('umtimezone')]",
+          "advancedSchedule": {
+            "weekDays": [
+              "Saturday"
+            ]
+          }
+        }
+      },
+      {
+        "name": "WeeklySun7pm",
+        "schedule": {
+          "startTime": "[parameters('umstartdate')]",
+          "isEnabled": true,
+          "interval": 1,
+          "frequency": "Week",
+          "timeZone": "[parameters('umtimezone')]",
+          "advancedSchedule": {
+            "weekDays": [
+              "Sunday"
+            ]
+          }
+        }
+      }
+
+    ]
+  },
+  "resources": [
+    {
+      "name": "[concat(parameters('aaname'),'/',subscription().displayName, '-Win-',variables('allSchedules')[copyindex()].name)]",
+      "type": "Microsoft.Automation/automationAccounts/softwareUpdateConfigurations",
+      "apiVersion": "2017-05-15-preview",
+      "copy": {
+        "count": "[length(variables('allSchedules'))]",
+        "name": "LoopPatchingTag"
+      },
+      "properties": {
+        "updateConfiguration": {
+          "operatingSystem": "Windows",
+          "windows": {
+            "includedUpdateClassifications": "Unclassified, Critical, Security, UpdateRollup, FeaturePack, ServicePack, Definition, Tools, Updates",
+            "rebootSetting": "Always"
+          },
+          "duration": "PT3H",
+          "targets": {
+            "azureQueries": [
+              {
+                "scope": "[parameters('hubSubscriptionId')]",
+                "locations": [],
+                "tagSettings": {
+                  "tags": {
+                    "UpdateManagement": [
+                      "[variables('allSchedules')[copyindex()].name]"
+                    ]
+                  },
+                  "filterOperator": "All"
+                }
+              }
+            ]
+          }
+        },
+        "scheduleInfo": "[variables('allSchedules')[copyindex()].schedule]"
+      }
+    }
+  ],
+  "outputs": {}
+}

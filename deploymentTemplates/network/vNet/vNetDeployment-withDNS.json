@@ -1,0 +1,54 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkName": { "type": "string" },
+
+    "virtualNetworkAddressRange1": {
+      "type": "string",
+      "metadata": { "description": "The address range of the new VNET in CIDR format" }
+    },
+    "virtualNetworkAddressRange2": {
+      "type": "string",
+      "metadata": { "description": "The address range of the new VNET in CIDR format" }
+    },
+    "subnets": { "type": "array" },
+    "dnsServerAddress": {
+      "type": "array",
+      "metadata": {
+        "description": "The DNS address(es) of the DNS Server(s) used by the VNET"
+      }
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]"
+  },
+  "resources": [
+    {
+      "name": "[parameters('virtualNetworkName')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[variables('location')]",
+      "tags": { "displayName": "virtualNetwork" },
+      "apiVersion": "2018-08-01",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworkAddressRange1')]",
+            "[parameters('virtualNetworkAddressRange2')]"
+          ]
+        },
+        "dhcpOptions": {
+          "dnsServers": "[parameters('dnsServerAddress')]"
+        },
+        "subnets": "[parameters('subnets')]"
+      }
+    }
+  ],
+  "outputs": {
+    "VNet": {
+      "type": "object",
+      "value": "[reference(parameters('virtualNetworkName'))]"
+    }
+  }
+}
+
