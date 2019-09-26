@@ -1,0 +1,84 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM Name"
+      }
+    },
+    "adeKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "ADE Key Vault name"
+      }
+    },
+    "keyVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "ADE Key Vault RG"
+      }
+    },
+    "kekVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault RG"
+      }
+    },
+    "adeKekKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault name"
+      }
+    },
+    "kek-url": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault name"
+      }
+    }
+
+  },
+
+  "variables": {
+    "extensionVersion": "2.2",
+    "encryptionOperation": "EnableEncryption",
+    "keyEncryptionAlgorithm": "RSA-OAEP",
+    "forceUpdateTag": "1.0",
+    "keyVaultResourceID": "[resourceId(parameters('keyVaultResourceGroup'), 'Microsoft.KeyVault/vaults/', parameters('adeKeyVaultName'))]",
+    "kekVaultResourceID": "[resourceId(parameters('kekVaultResourceGroup'), 'Microsoft.KeyVault/vaults/', parameters('adeKekKeyVaultName'))]"
+  },
+  "resources": [
+
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('vmName'),'/AzureDiskEncryption')]",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Azure.Security",
+        "type": "AzureDiskEncryption",
+        "typeHandlerVersion": "[variables('extensionVersion')]",
+        "autoUpgradeMinorVersion": true,
+        "forceUpdateTag": "[variables('forceUpdateTag')]",
+        "settings": {
+
+          "KeyVaultURL": "[reference(variables('keyVaultResourceID'),'2016-10-01').vaultUri]",
+          "KeyEncryptionAlgorithm": "[variables('keyEncryptionAlgorithm')]",
+          "VolumeType": "All",
+          "EncryptionOperation": "[variables('encryptionOperation')]",
+          "KeyVaultResourceId": "[variables('keyVaultResourceID')]",
+          "KeyEncryptionKeyURL": "[parameters('kek-url')]",
+          "KekVaultResourceId": "[variables('kekVaultResourceID')]",
+          "ResizeOSDisk": false
+        },
+        "protectedSettings": {
+
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

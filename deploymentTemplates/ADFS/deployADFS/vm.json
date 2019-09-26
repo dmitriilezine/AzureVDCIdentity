@@ -1,0 +1,271 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "localadminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VM"
+      }
+    },
+    "localadminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new VM"
+      }
+    },
+    "domainjoinPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the domainjoin account"
+      }
+    },
+    "domainjoinUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the domainjoin account"
+      }
+    },
+    "dataDiskSize": {
+      "type": "int",
+      "metadata": {
+        "description": "Size of the VM data disk in GB"
+      },
+      "defaultValue": 150
+    },
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The domain name"
+      }
+    },
+    "NicName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Nic attached to the ad VM"
+      }
+    },
+    "primaryIpAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "PrimaryIPAddress"
+      }
+    },
+    "subnetResourceID": {
+      "type": "string",
+      "metadata": {
+        "description": "the resource id of the subnet"
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM Name"
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "metadata": {
+        "description": "The size of the AD VMs Created"
+      }
+    },
+    "windowsImageOffer": {
+      "type": "string",
+      "metadata": {
+        "description": "The offer of Windows Image"
+      },
+      "defaultValue": "WindowsServer"
+    },
+    "windowsImagePublisher": {
+      "type": "string",
+      "metadata": {
+        "description": "The Publisher of Windows Image"
+      },
+      "defaultValue": "MicrosoftWindowsServer"
+    },
+    "windowsImageSKU": {
+      "type": "string",
+      "metadata": {
+        "description": "The SKU Name of Windows Image"
+      },
+      "defaultValue": "2016-Datacenter"
+    },
+    "windowsImageVersion": {
+      "type": "string",
+      "metadata": {
+        "description": "The Version of Windows Image"
+      },
+      "defaultValue": "latest"
+    },
+    "availabilitySetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Availability set for VMs"
+      }
+    },
+    "ouPath": {
+      "type": "string",
+      "metadata": {
+        "description": "Target OU for VM"
+      }
+    },
+    "ilbID": {
+      "type": "string",
+      "metadata": {
+        "description": "Internal Load Balancer ID"
+      }
+    },
+    "keyVaultID": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Key Vault ID where certificate is stored"
+      }
+    },
+    "CertForADFS": {
+      "type": "string",
+      "metadata": {
+        "description": "URI for the cert"
+      }
+    },
+    "diagnosticsStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account for VM diagnostics"
+      }
+    },
+    "updateManagementTime": {
+      "type": "string",
+      "metadata": {
+        "description": "update management schedule"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "environment this VM is deployed at"
+      }
+    }
+  },
+  "variables": {
+    "domainJoinOptions": "3",
+    "joinUserDN": "[concat(parameters('domainName'), '\\', parameters('domainjoinUsername'))]"
+  },
+  "resources": [
+    {
+      "name": "[parameters('NicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-05-01-preview",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[parameters('primaryIpAddress')]",
+              "subnet": {
+                "id": "[parameters('subnetResourceID')]"
+              },
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[concat(parameters('ilbID'), '/backendAddressPools/BackendPool1')]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[parameters('vmName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "UpdateManagement": "[parameters('updateManagementTime')]",
+        "Environment": "[parameters('environment')]"
+      },
+      "apiVersion": "2017-03-30",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces',parameters('NicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySetName'))]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('localadminUsername')]",
+          "adminPassword": "[parameters('localadminPassword')]",
+          "secrets": [
+            {
+              "sourceVault": {
+                "id": "[parameters('keyVaultID')]"
+              },
+              "vaultCertificates": [
+                {
+                  "certificateUrl": "[parameters('CertForADFS')]",
+                  "certificateStore": "my"
+                }
+              ]
+            }
+          ]
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[parameters('windowsImagePublisher')]",
+            "offer": "[parameters('windowsImageOffer')]",
+            "sku": "[parameters('windowsImageSKU')]",
+            "version": "[parameters('windowsImageVersion')]"
+          },
+          "osDisk": {
+            "name": "[concat(parameters('vmName'), '0','-osdisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": "[concat('https://', parameters('diagnosticsStorageAccountName'), '.blob.core.windows.net/')]"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('NicName'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('vmName'),'/joindomain')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines',parameters('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "JsonADDomainExtension",
+        "typeHandlerVersion": "1.3",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "Name": "[parameters('domainName')]",
+          "OUPath": "[parameters('ouPath')]",
+          "User": "[variables('joinUserDN')]",
+          "Restart": "true",
+          "Options": "[variables('domainJoinOptions')]"
+        },
+        "protectedSettings": {
+          "Password": "[parameters('domainjoinPassword')]"
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

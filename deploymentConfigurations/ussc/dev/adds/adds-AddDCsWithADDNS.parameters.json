@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "usageAttributionId": { "value": "00000000-0000-0000-0000-000000000000" },
+    "numberOfAddtionalDCs": { "value": 2 },
+    "deployADDSAvailabilitySet": { "value": "No" },
+
+    "adminPassword": { "value": "pipelineProvided" },
+    "dsrmPassword": { "value": "pipelineProvided" },
+    "SAURL": { "value": "pipelineProvided" },
+    "SASToken": { "value": "pipelineProvided" },
+
+    "configFunctionAddDCs": { "value": "DeployADDS.ps1\\AddDCstoADDSwithADDNS" },
+
+    "environment": { "value": "usscdev" },
+    "domainName": { "value": "contosodev.cloud" },
+    "osVersion": { "value": "2019-Datacenter" },
+    "DNSIPAddress": { "value": "10.0.1.100" },
+    "dcVMadminUsername": { "value": "labAdmin" },
+    "adminUsername": { "value": "labAdmin" },
+
+    "existingVirtualNetworkName": { "value": "vNet11" },
+    "existingVirtualNetworkRG": { "value": "usscdev-network-rg" },
+    "DomainControllersSubnetName": { "value": "adds" },
+    "VirtualMachineSize": { "value": "Standard_D8S_v3" },
+
+    "DCVMNamePrefix": { "value": "usscdevads0" },
+    "dcVMNameLoopStart": { "value": 2 },
+    "DCIPAddressPrefix": { "value": "10.0.1." },
+    "dcIPAddressLoopStart": { "value": 5 },
+
+    "dataDiskSize": { "value": 150 },
+
+    "diagnosticsStorageAccountName": { "value": "usscdevlogdiagsa1" },
+    "StorageAccountRG": { "value": "usscdev-logging-rg" },
+
+    "adeKeyVaultName": { "value": "usscdev1-adds-ade-akv" },
+    "adeKeyVaultResourceGroup": { "value": "usscdev-adds-rg" },
+
+    "adAvailabilitySetName": { "value": "usscdev-adds-as" },
+
+    "laworkspaceref": { "value": "/subscriptions/<--LA-SUBSCRIPTION-ID-->/resourceGroups/tier0dev-logging-rg/providers/Microsoft.OperationalInsights/workspaces/tier0dev-la1" },
+
+    "updateManagementTimeDC02": { "value": "WeeklySun7pm" },
+
+    "kekVaultResourceGroup": { "value": "Tier0AKV" },
+    "adeKekKeyVaultName": { "value": "usscdev1-ade-kek-kv" },
+    "kek-url": { "value": "<--ADDS-KEK-URL-->" }
+
+  }
+}

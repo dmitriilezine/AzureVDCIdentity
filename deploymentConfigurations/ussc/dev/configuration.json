@@ -1,0 +1,11 @@
+{
+  "tier0prefix": "tier0dev",
+  "prefix": "usscdev",
+  "location": "southcentralus",
+  "laworkspacelocation": "eastus",
+  "umtimezone": "America/Chicago",
+  "aaname": "{tier0prefix}-mgmtaa1",
+  "adekv": "keyvault.json",
+  "startTime": "17:00"
+
+}

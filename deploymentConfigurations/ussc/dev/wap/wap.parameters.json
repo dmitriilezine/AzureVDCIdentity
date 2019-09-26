@@ -1,0 +1,58 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "usageAttributionId": { "value": "00000000-0000-0000-0000-000000000000" },
+    "numberOfWAPServers": { "value": 2 },
+    "deployWAPILB": { "value": "Yes" },
+    "deployWAPAvailabilitySet": { "value": "Yes" },
+
+    "localadminPassword": { "value": "pipelineProvided" },
+    "SASToken": { "value": "pipelineProvided" },
+    "SAURL": { "value": "pipelineProvided" },
+    "ADFSCertID": { "value": "pipelineProvided" },
+    "adfswapdeploymentaccountpwd": { "value": "pipelineProvided" },
+
+    "environment": { "value": "usscdev" },
+    "domainName": { "value": "contosodev.cloud" },
+    "adfswapdeploymentaccount": { "value": "adfswapdeploy" },
+    "localadminUsername": { "value": "LocalAdmin" },
+    "adfsSVCname": { "value": "adfssvc" },
+
+    "existingVirtualNetworkName": { "value": "vNet11" },
+    "existingVirtualNetworkRG": { "value": "usscdev-network-rg" },
+    "WAPSubnetName": { "value": "adwap" },
+
+    "DepSecretsVaultName": { "value": "usscdev1-adfs-cert-kv" },
+    "DepSecretsKeyVaultRG": { "value": "usscdev-adfs-rg" },
+    "ADFSServiceCert": { "value": "<--ADFS-CERT-CN-->" },
+
+    "VirtualMachineSize": { "value": "Standard_DS1_v2" },
+
+    "wapVMNamePrefix": { "value": "usscdevwap0" },
+    "wapVMNameLoopStart": { "value": 1 },
+    "wapIPAddressPrefix": { "value": "10.0.6." },
+    "wapIPAddressLoopStart": { "value": 4 },
+
+    "ILBforWAP": { "value": "10.0.6.100" },
+    "wapAvailabiltySet": { "value": "usscdev-wap-as" },
+    "ilbWAPName": { "value": "usscdev-wap-lb" },
+    "ADFSServerIpAddress": { "value": "10.0.5.4" },
+
+    "diagnosticsStorageAccountName": { "value": "usscdevlogdiagsa1" },
+    "StorageAccountRG": { "value": "usscdev-logging-rg" },
+
+    "adeKeyVaultName": { "value": "usscdev1-adwap-ade-akv" },
+    "adeKeyVaultResourceGroup": { "value": "usscdev-adwap-rg" },
+
+    "laworkspaceref": { "value": "/subscriptions/<--LA-SUBSCRIPTION-ID-->/resourceGroups/tier0dev-logging-rg/providers/Microsoft.OperationalInsights/workspaces/tier0dev-la1" },
+
+    "updateManagementTimeWAP01": { "value": "WeeklySat7pm" },
+    "updateManagementTimeWAP02": { "value": "WeeklySat7pm" },
+
+    "kekVaultResourceGroup": { "value": "Tier0AKV" },
+    "adeKekKeyVaultName": { "value": "usscdev1-ade-kek-kv" },
+    "kek-url": { "value": "<--ADWAP-KEK-URL-->" }
+  }
+}

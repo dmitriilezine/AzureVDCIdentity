@@ -1,0 +1,44 @@
+dn: CN=AzurePAW Offline IPsec,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=com
+changetype: add
+cn: AzurePAW Offline IPsec
+displayName: AzurePAW Offline IPsec
+distinguishedName: 
+ CN=AzurePAW Offline IPsec,CN=Certificate Templates,CN=Public Key Services,CN=Service
+ s,CN=Configuration,DC=domain,DC=com
+dSCorePropagationData: 16010101000000.0Z
+flags: 131680
+instanceType: 4
+msPKI-Cert-Template-OID: 
+ 1.3.6.1.4.1.311.21.8.3654683.230979.10045861.9460462.11363380.18.3603214.45365
+ 95
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.5.8.2.2
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.5.7.3.2
+msPKI-Certificate-Name-Flag: 1
+msPKI-Enrollment-Flag: 0
+msPKI-Minimal-Key-Size: 2048
+msPKI-Private-Key-Flag: 84214032
+msPKI-RA-Signature: 0
+msPKI-Template-Minor-Revision: 1
+msPKI-Template-Schema-Version: 4
+name: AzurePAW Offline IPsec
+objectCategory: 
+ CN=PKI-Certificate-Template,CN=Schema,CN=Configuration,DC=domain,DC=com
+objectClass: top
+objectClass: pKICertificateTemplate
+pKICriticalExtensions: 2.5.29.7
+pKICriticalExtensions: 2.5.29.15
+pKIDefaultCSPs: 1,Microsoft RSA SChannel Cryptographic Provider
+pKIDefaultKeySpec: 1
+pKIExpirationPeriod:: AEA5hy7h/v8=
+pKIExtendedKeyUsage: 1.3.6.1.5.5.8.2.2
+pKIExtendedKeyUsage: 1.3.6.1.5.5.7.3.2
+pKIKeyUsage:: oAA=
+pKIMaxIssuingDepth: 0
+pKIOverlapPeriod:: AICmCv/e//8=
+revision: 100
+showInAdvancedViewOnly: TRUE
+uSNChanged: 39624
+uSNCreated: 39624
+whenChanged: 20141022031331.0Z
+whenCreated: 20141022031331.0Z
+

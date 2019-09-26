@@ -1,0 +1,102 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of WAP Server"
+      }
+    },
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The domain name"
+      }
+    },
+    "adfsSVCname": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the ADFS Service Account"
+      }
+    },
+    "adfswapdeploymentaccount": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the ADFS & WAP deployment account"
+      }
+    },
+    "adfswapdeploymentaccountpwd": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for ADFS & WAP deployment account"
+      }
+    },
+    "ModulesURL": {
+      "type": "string",
+      "metadata": {
+        "description": "Location of the DSC module"
+      }
+    },
+    "storageAccountSASTokenviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Key for the Storage account"
+      }
+    },
+    "configurationFunction": {
+      "type": "string",
+      "metadata": {
+        "description": "Configuration function for DSC deployment"
+      }
+    },
+    "ADFSServiceCert": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the trusted external Cert"
+      }
+    },
+    "ADFSServerIP": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the trusted external Cert"
+      }
+    }
+  },
+  "variables": {  },
+  "resources": [
+    {
+      "name": "[concat(parameters('VMName'),'/InstallWAP')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "properties": {
+        "publisher": "Microsoft.Powershell",
+        "type": "DSC",
+        "typeHandlerVersion": "2.8",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "modulesUrl": "[parameters('ModulesURL')]",
+          "configurationFunction": "[parameters('configurationFunction')]",
+          "SasToken": "[parameters('storageAccountSASTokenviaKeyvault')]",
+          "properties": {
+            "domainName": "[parameters('domainName')]",
+            "ADFSServiceCert": "[parameters('ADFSServiceCert')]",
+            "ADFSServerIP": "[parameters('ADFSServerIP')]",
+            "ADFSWAPDeploycreds": {
+              "userName": "[parameters('adfswapdeploymentaccount')]",
+              "password": "PrivateSettingsRef:adfswapPassword"
+            }
+          }
+        },
+        "protectedSettings": {
+          "items": {
+            "adfswapPassword": "[parameters('adfswapdeploymentaccountpwd')]",
+            "configurationUrlSasToken": "[parameters('storageAccountSASTokenviaKeyvault')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

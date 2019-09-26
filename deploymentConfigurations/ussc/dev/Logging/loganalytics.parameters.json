@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "prefix": { "value": "tier0dev" },
+    "dataretention": { "value": 30 },
+    "servicetier": { "value": "PerNode" },
+    "solutionTypes": {
+      "value": [
+        "AzureAutomation",
+        "ChangeTracking",
+        "Updates",
+        "NetworkMonitoring"
+      ]
+    },
+    "laworkspacelocation": { "value": "eastus" },
+    "automationaccountlocation": { "value": "eastus2" }
+  }
+}

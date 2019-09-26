@@ -1,0 +1,117 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ilbName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Load Balancer"
+      }
+    },
+    "laworkspaceref": {
+      "type": "string",
+      "metadata": {
+        "description": "Tier0 Log analytics workspace id"
+      }
+    },
+    "subnetResourceID": {
+      "type": "string",
+      "metadata": {
+        "description": "Subnet ID"
+      }
+    },
+    "ilbPrivateIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Private IP address for ILB"
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "[parameters('ilbName')]",
+      "location": "[resourceGroup().location]",
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2018-08-01",
+      "sku": {
+        "name": "Standard"
+      },
+
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "ilbFrontend",
+            "properties": {
+              "subnet": {
+                "id": "[parameters('subnetResourceID')]"
+              },
+              "privateIPAddress": "[parameters('ilbPrivateIPAddress')]",
+              "privateIPAllocationMethod": "Static"
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "BackendPool1"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('ilbName')), '/frontendIpConfigurations/ilbFrontend')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('ilbName')), '/backendAddressPools/BackendPool1')]"
+              },
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', parameters('ilbName')), '/probes/lbprobe')]"
+              },
+              "protocol": "Tcp",
+              "frontendPort": 443,
+              "backendPort": 443,
+              "idleTimeoutInMinutes": 15
+            },
+            "Name": "lbrule"
+          }
+        ],
+        "probes": [
+          {
+            "properties": {
+              "protocol": "Tcp",
+              "port": 443,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
+            },
+            "name": "lbprobe"
+          }
+        ]
+      },
+      "resources": [
+        {
+          "type": "providers/diagnosticSettings",
+          "name": "Microsoft.Insights/service",
+          "apiVersion": "2015-07-01",
+          "dependsOn": [
+            "[parameters('ilbName')]"
+          ],
+          "properties": {
+            "workspaceId": "[parameters('laworkspaceref')]",
+            "logs": [
+              {
+                "category": "LoadBalancerAlertEvent",
+                "enabled": true
+              },
+              {
+                "category": "LoadBalancerProbeHealthStatus",
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {}
+}

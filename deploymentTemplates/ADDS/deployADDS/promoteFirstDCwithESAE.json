@@ -1,0 +1,175 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dc1VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of Primary AD"
+      }
+    },
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The domain name"
+      }
+    },
+    "netbiosName": {
+      "type": "string",
+      "metadata": {
+        "description": "Domain Netbios name"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator  of the new VMs and Domain"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VMs and Domain"
+      }
+    },
+    "dsrmPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for DSRM for ADDS"
+      }
+    },
+    "svcacctpwd": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for service accounts in ADDS"
+      }
+    },
+    "adConfigurationFunction": {
+      "type": "string",
+      "metadata": {
+        "description": "Configuration Function value"
+      }
+    },
+    "NonADDSDNSIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "DNS IP Address"
+      }
+    },
+    "assetLocationStorageAccount": {
+      "type": "string",
+      "metadata": {
+        "description": "The location of resources that the script is dependent on such as linked templates and DSC modules"
+      }
+    },
+    "storageAccountKeyviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Key for the Storage account"
+      }
+    },
+    "storageAccountSASTokenviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Key for the Storage account"
+      }
+    },
+    "corpdomainfqdn": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Corp Domain"
+      }
+    },
+    "CorpDC1IP": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address of the Corp Domain DC"
+      }
+    },
+    "connectionpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Pointer to the Storage Account File Share"
+      }
+    },
+    "Storageuser": {
+      "type": "string",
+      "metadata": {
+        "description": "User String for connecting to the SA File Share"
+      }
+    },
+    "RedCardGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Red Card Group Name"
+      }
+    },
+    "WhiteCardGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "White Card Group Name"
+      }
+    },
+    "GoldCardGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Gold Card Group Name"
+      }
+    }
+
+
+  },
+  "variables": {
+    "adPDCModulesURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/DeployADDS.zip')]",
+    "adPDCConfigurationFunction": "[parameters('adConfigurationFunction')]"
+  },
+  "resources": [
+    {
+      "name": "[concat(parameters('dc1VMName'),'/InstallDomainController')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "properties": {
+        "publisher": "Microsoft.Powershell",
+        "type": "DSC",
+        "typeHandlerVersion": "2.8",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "modulesUrl": "[variables('adPDCModulesURL')]",
+          "configurationFunction": "[variables('adPDCConfigurationFunction')]",
+          "SasToken": "[parameters('storageAccountSASTokenviaKeyvault')]",
+          "properties": {
+            "domainName": "[parameters('domainName')]",
+            "DNSServer": "[parameters('NonADDSDNSIPAddress')]",
+            "netbiosName": "[parameters('netbiosName')]",
+            "corpdomainfqdn": "[parameters('corpdomainfqdn')]",
+            "CorpDC1IP": "[parameters('CorpDC1IP')]",
+            "connectionpoint": "[parameters('connectionpoint')]",
+            "Storageuser": "[parameters('Storageuser')]",
+            "RedCardGroupName": "[parameters('RedCardGroupName')]",
+            "WhiteCardGroupName": "[parameters('WhiteCardGroupName')]",
+            "GoldCardGroupName": "[parameters('GoldCardGroupName')]",
+
+            "adminCreds": {
+              "userName": "[parameters('adminUserName')]",
+              "password": "PrivateSettingsRef:adminPassword"
+            },
+            "DSRMPWD": "PrivateSettingsRef:DSRMPWD",
+            "svcacctpwd": "PrivateSettingsRef:svcacctpwd",
+            "Storagekey": "PrivateSettingsRef:Storagekey"
+          }
+        },
+        "protectedSettings": {
+          "items": {
+            "adminPassword": "[parameters('adminPassword')]",
+            "DSRMPWD": "[parameters('dsrmPassword')]",
+            "svcacctpwd": "[parameters('svcacctpwd')]",
+            "Storagekey": "[parameters('storageAccountKeyviaKeyvault')]",
+            "configurationUrlSasToken": "[parameters('storageAccountSASTokenviaKeyvault')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

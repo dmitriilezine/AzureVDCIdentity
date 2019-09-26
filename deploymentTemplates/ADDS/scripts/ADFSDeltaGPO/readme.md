@@ -1,0 +1,1 @@
+placeholder folder for ADFS Delta GPO - must be created

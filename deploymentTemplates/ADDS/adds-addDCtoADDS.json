@@ -1,0 +1,519 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "Current deployment supports top level domain name only, for example contoso.com, fabrikam.com etc"
+      }
+    },
+    "DNSIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Provide valid IP address for external DNS server that hosts DNS zone for the ADDS domain. Used only when using external DNS"
+      }
+    },
+    "dcVMadminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the VM that will be later promoted to DC. This value must stay the same, even if the name of the account in ADDS has changed"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new Domain. The value of this parameter must be the same during as dcVMadminUsername during initial run of the pipeline."
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VMs and Domain."
+      }
+    },
+    "dsrmPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the DSRM account for ADDS DC"
+      }
+    },
+    "existingVirtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify the name for the vNet to which this server will be deployed."
+      }
+    },
+    "existingVirtualNetworkRG": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing VNET resource group"
+      }
+    },
+    "DomainControllersSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the subnet in the virtual network you want to put this VM"
+      }
+    },
+    "VirtualMachineSize": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_DS12_v2",
+        "Standard_DS2_v2",
+        "Standard_D8S_v3",
+        "Standard_D4s_v3"
+      ],
+      "metadata": {
+        "description": "VM Size. The bigger it is, the more $ you will spend."
+      },
+      "defaultValue": "Standard_DS2_v2"
+    },
+    "DCVMNamePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Must be compliant with Windows Server naming convention. Actual name will be derived from this prefix and loop logic"
+      }
+    },
+    "dcVMNameLoopStart": {
+      "type": "int",
+      "metadata": {
+        "description": "Specify the digit where loop should start for creating server name. It will be appended to the dcVMNamePrefix"
+      }
+    },
+    "DCIPAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for DC. Actual IP will be derived from this prefix and the loop logic"
+      }
+    },
+    "dcIPAddressLoopStart": {
+      "type": "int",
+      "metadata": {
+        "description": "Specify the digit where loop should start for creating IP address. It will be appended to the dcIPAddressPrefix"
+      }
+    },
+    "SAURL": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account for scripts and JSON"
+      }
+    },
+    "diagnosticsStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify storage account that will be used for VM diagnostics"
+      }
+    },
+    "StorageAccountRG": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify storage account RG"
+      }
+    },
+    "adeKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault Name used for Azure Disk Encryption for this VM. Must be in the same region as this VM"
+      }
+    },
+    "adeKeyVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "ADE Key Vault RG"
+      }
+    },
+    "adAvailabilitySetName": {
+      "type": "string",
+      "metadata": {
+        "description": "ADDS Availability Set Name"
+      }
+    },
+    "SASToken": {
+      "type": "string",
+      "metadata": {
+        "description": "SAS Token for Storage account"
+      }
+    },
+    "laworkspaceref": {
+      "type": "string",
+      "metadata": {
+        "description": "Reference to Log Analytics workspace"
+      }
+    },
+    "updateManagementTimeDC02": {
+      "type": "string",
+      "metadata": {
+        "description": "update management schedule time #2"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "environment this VM is deployed at"
+      }
+    },
+    "kekVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault RG"
+      }
+    },
+    "adeKekKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault name"
+      }
+    },
+    "kek-url": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault name"
+      }
+    },
+    "dataDiskSize": {
+      "type": "int",
+      "metadata": {
+        "description": "Size of the VM data disk in GB"
+      }
+    },
+    "numberOfAddtionalDCs": {
+      "type": "int",
+      "metadata": {
+        "description": "Number of additional DCs to be deployed in this location"
+      }
+    },
+    "deployADDSAvailabilitySet": {
+      "type": "string",
+      "metadata": {
+        "description": "Value Yes will deploy AS"
+      }
+    },
+    "configFunctionAddDCs": {
+      "type": "string",
+      "metadata": {
+        "description": "Configuration function used to deploy additional DCs in ADDS forest - with or without AD DNS"
+      }
+    },
+    "usageAttributionId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure partner customer usage attribution Identifier. The GUID must be previously registered."
+      }
+    },
+    "osVersion": {
+      "type": "string",
+      "defaultValue": "2019-Datacenter",
+      "metadata": {
+        "description": "OS Version"
+      }
+    }
+  },
+  "variables": {
+
+    "ADDSsubnetResourceID": "[resourceId(parameters('existingVirtualNetworkRG'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('DomainControllersSubnetName'))]",
+
+    "dcTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployADDS/BDCvm.json',parameters('SASToken'))]",
+    "deployAdTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployADDS/addDCtoExistingADDS.json',parameters('SASToken'))]",
+    "vmDiagnosticsTemplateURL": "[concat(parameters('SAURL'),'/scripts/vmDiagnostics.json',parameters('SASToken'))]",
+    "vmAntimalwareTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployAntimalware.json',parameters('SASToken'))]",
+    "vmADETemplateURL": "[concat(parameters('SAURL'),'/scripts/encryptVMkek.json',parameters('SASToken'))]",
+    "vmLogAnalyticsTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployLA.json',parameters('SASToken'))]",
+
+    "addsModuleURL": "[concat(parameters('SAURL'),'/scripts/scripts/DeployADDS.zip')]",
+    "domainJoinOptions": "3",
+    "domainJoinUserDN": "[concat(parameters('domainName'), '\\', parameters('adminUsername'))]",
+
+    "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
+    "domainSuffix": "[split(parameters('domainName'),'.')[1]]",
+    "ouPathDomainJoinTemp": "[concat('OU=DomainJoinTemp;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+    "ouPathAdmin": "[concat('OU=Admin;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+    "ouPathNone": "",
+
+    "diagnosticsaccountid": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/',parameters('StorageAccountRG'), '/providers/','Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]",
+
+    "dcNICName": "[concat('NIC-',parameters('DCVMNamePrefix'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-02-01",
+      "name": "[concat('pid-', parameters('usageAttributionId'))]",
+      "condition": "[not(empty(parameters('usageAttributionId')))]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('deployADDSAvailabilitySet'), 'Yes')]",
+      "name": "[parameters('adAvailabilitySetName')]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "PlatformUpdateDomainCount": 3,
+        "PlatformFaultDomainCount": 2
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    },
+    {
+      "condition": "[greater(parameters('NumberOfAddtionalDCs'),0)]",
+      "name": "[concat('Deploy-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[parameters('NumberOfAddtionalDCs')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets',parameters('adAvailabilitySetName'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('dcTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "adminUsername": {
+            "value": "[parameters('dcVMadminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "subnetResourceID": {
+            "value": "[variables('ADDSsubnetResourceID')]"
+          },
+          "windowsImageSKU": {
+            "value": "[parameters('OSVersion')]"
+          },
+          "vmName": {
+            "value": "[concat(parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+          },
+          "vmSize": {
+            "value": "[parameters('VirtualMachineSize')]"
+          },
+          "NicName": {
+            "value": "[concat(variables('dcNICName'), copyIndex(parameters('dcVMNameLoopStart')))]"
+          },
+          "assetLocation": {
+            "value": "[parameters('SAURL')]"
+          },
+          "primaryIpAddress": {
+            "value": "[concat(parameters('DCIPAddressPrefix'), copyIndex(parameters('dcIPAddressLoopStart')))]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adAvailabilitySetName": {
+            "value": "[parameters('adAvailabilitySetName')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "updateManagementTime": {
+            "value": "[parameters('updateManagementTimeDC02')]"
+          },
+          "dataDiskSize": {
+            "value": "[parameters('dataDiskSize')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "ouPath": {
+            "value": "[variables('ouPathDomainJoinTemp')]"
+          },
+          "domainJoinOptions": {
+            "value": "[variables('domainJoinOptions')]"
+          },
+          "domainJoinUserDN": {
+            "value": "[variables('domainJoinUserDN')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('NumberOfAddtionalDCs'),0)]",
+      "name": "[concat('PromoteToDC-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[parameters('NumberOfAddtionalDCs')]"
+      },
+      "dependsOn": [
+        "[concat('Deploy-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('deployAdTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "dc2VMName": {
+            "value": "[concat(parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "dsrmPassword": {
+            "value": "[parameters('dsrmPassword')]"
+          },
+          "adConfigurationFunction": {
+            "value": "[parameters('configFunctionAddDCs')]"
+          },
+          "NonADDSDNSIPAddress": {
+            "value": "[parameters('DNSIPAddress')]"
+          },
+          "addsModuleURL": {
+            "value": "[variables('addsModuleURL')]"
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "value": "[parameters('SASToken')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('NumberOfAddtionalDCs'),0)]",
+      "name": "[concat('DeployVMDiagnosticsOn-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[parameters('NumberOfAddtionalDCs')]"
+      },
+      "dependsOn": [
+        "[concat('Deploy-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmDiagnosticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[concat(parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "accountid": {
+            "value": "[variables('diagnosticsaccountid')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('NumberOfAddtionalDCs'),0)]",
+      "name": "[concat('DeployAntimalwareOn-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[parameters('NumberOfAddtionalDCs')]"
+      },
+      "dependsOn": [
+        "[concat('Deploy-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmAntimalwareTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[concat(parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('NumberOfAddtionalDCs'),0)]",
+      "name": "[concat('DeployLogAnalyticsOn-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[parameters('NumberOfAddtionalDCs')]"
+      },
+      "dependsOn": [
+        "[concat('Deploy-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmLogAnalyticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[concat(parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+          },
+          "laworkspaceref": {
+            "value": "[parameters('laworkspaceref')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('NumberOfAddtionalDCs'),0)]",
+      "name": "[concat('EncryptDisksOn-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[parameters('NumberOfAddtionalDCs')]"
+      },
+      "dependsOn": [
+        "[concat('PromoteToDC-',parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmADETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[concat(parameters('DCVMNamePrefix'), copyIndex(parameters('dcVMNameLoopStart')))]"
+          },
+          "adeKeyVaultName": {
+            "value": "[parameters('adeKeyVaultName')]"
+          },
+          "keyVaultResourceGroup": {
+            "value": "[parameters('adeKeyVaultResourceGroup')]"
+          },
+          "kekVaultResourceGroup": {
+            "value": "[parameters('kekVaultResourceGroup')]"
+          },
+          "adeKekKeyVaultName": {
+            "value": "[parameters('adeKekKeyVaultName')]"
+          },
+          "kek-url": {
+            "value": "[parameters('kek-url')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "VM name"
+      }
+    },
+    "assetLocationStorageAccount": {
+      "type": "string",
+      "metadata": {
+        "description": "The location of resources that the script is dependent on such as linked templates and DSC modules"
+      }
+    },
+    "storageAccountSASTokenviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SAS for the Storage account"
+      }
+    }
+  },
+  "variables": {
+    "ModulesURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/ConfigureSQL.zip')]",
+    "ConfigurationFunction": "ConfigureSQL.ps1\\ConfigureSQL"
+  },
+  "resources": [
+    {
+      "name": "[concat(parameters('VMName'),'/ConfigureSQL')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "properties": {
+        "publisher": "Microsoft.Powershell",
+        "type": "DSC",
+        "typeHandlerVersion": "2.8",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "modulesUrl": "[variables('ModulesURL')]",
+          "configurationFunction": "[variables('ConfigurationFunction')]",
+          "SasToken": "[parameters('storageAccountSASTokenviaKeyvault')]",
+          "properties": {
+            "computerName": "[parameters('VMName')]"
+          }
+        },
+        "protectedSettings": {
+          "items": {
+            "configurationUrlSasToken": "[parameters('storageAccountSASTokenviaKeyvault')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

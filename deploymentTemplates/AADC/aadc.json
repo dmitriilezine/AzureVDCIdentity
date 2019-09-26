@@ -1,0 +1,918 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "Current deployment supports top level domain name only, for example contoso.com, fabrikam.com etc"
+      }
+    },
+    "localadminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VM"
+      }
+    },
+    "localadminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new VM"
+      }
+    },
+    "domainjoinPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the domainjoin account"
+      }
+    },
+    "domainjoinUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the domainjoin account"
+      }
+    },
+    "existingVirtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify the name for the vNet to whcih this server will be deployed."
+      }
+    },
+    "existingVirtualNetworkResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing VNET resource group"
+      }
+    },
+    "AADCsubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the subnet in the virtual network you want to put this VM"
+      }
+    },
+    "virtualMachineSize": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_DS12_v2",
+        "Standard_DS2_v2",
+        "Standard_D8S_v3",
+        "Standard_E4s_v3"
+      ],
+      "metadata": {
+        "description": "VM Size. The bigger it is, the more $ you will spend."
+      },
+      "defaultValue": "Standard_E4s_v3"
+    },
+    "aadc1VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "Must be compliant with Windows Server naming convention"
+      }
+    },
+    "aadc2VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "Must be compliant with Windows Server naming convention"
+      }
+    },
+    "aadcVM1IPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for AADC VM 1"
+      }
+    },
+    "aadcVM2IPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for AADC VM 2"
+      }
+    },
+    "SAURL": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account for scripts and JSON"
+      }
+    },
+    "diagnosticsStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify storage account that will be used for VM diagnostics"
+      }
+    },
+    "StorageAccountRG": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify storage account RG"
+      }
+    },
+    "adeKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault Name used for Azure Disk Encryption for this VM. Must be in the same region as this VM"
+      }
+    },
+    "adeKeyVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "ADE Key Vault RG"
+      }
+    },
+    "kekVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault RG"
+      }
+    },
+    "adeKekKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault name"
+      }
+    },
+    "kek-url": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault name"
+      }
+    },
+    "aadcAvailabiltySet": {
+      "type": "string",
+      "metadata": {
+        "description": "Availability Set name for ADFS servers"
+      }
+    },
+    "SASToken": {
+      "type": "string",
+      "metadata": {
+        "description": "SAS Token for Storage account"
+      }
+    },
+    "SAKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Key for Storage account"
+      }
+    },
+    "sqlConnectivityType": {
+      "type": "string"
+    },
+    "sqlPortNumber": {
+      "type": "int"
+    },
+    "sqlStorageDisksCount": {
+      "type": "int"
+    },
+    "sqlStorageWorkloadType": {
+      "type": "string"
+    },
+    "sqlStorageDisksConfigurationType": {
+      "type": "string"
+    },
+    "sqlStorageStartingDeviceId": {
+      "type": "int"
+    },
+    "sqlStorageDeploymentToken": {
+      "type": "int"
+    },
+    "sqlAutopatchingDayOfWeek": {
+      "type": "string"
+    },
+    "sqlAutopatchingStartHour": {
+      "type": "string"
+    },
+    "sqlAutopatchingWindowDuration": {
+      "type": "string"
+    },
+    "sqlAuthenticationLogin": {
+      "type": "string"
+    },
+    "sqlAuthenticationPassword": {
+      "type": "securestring"
+    },
+    "rServicesEnabled": {
+      "type": "string"
+    },
+    "licenseOffer": {
+      "type": "string"
+    },
+    "laworkspaceref": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM Name"
+      }
+    },
+    "updateManagementTimeADC01": {
+      "type": "string",
+      "metadata": {
+        "description": "update management schedule"
+      }
+    },
+    "updateManagementTimeADC02": {
+      "type": "string",
+      "metadata": {
+        "description": "update management schedule"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "environment this VM is deployed at"
+      }
+    },
+    "RunSQLExtensionDeployment": {
+      "type": "string",
+      "allowedValues": [
+        "YES",
+        "NO"
+      ],
+      "metadata": {
+        "description": "Indicates if SQL Extension deployment should be run on the AA"
+      }
+    },
+    "runSQLStorageUpdateSettings": {
+      "type": "string",
+      "allowedValues": [
+        "YES",
+        "NO"
+      ],
+      "metadata": {
+        "description": "This parameter enable or disables the execution of the SQL Storage Update Settings"
+      }
+    },
+    "usageAttributionId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure partner customer usage attribution Identifier. The GUID must be previously registered."
+      }
+    },
+    "OSVersion": {
+      "type": "string",
+      "defaultValue": "Enterprise",
+      "metadata": {
+        "description": "OS Version"
+      }
+    }
+  },
+  "variables": {
+
+    "AADCsubnetID": "[resourceId(parameters('existingVirtualNetworkResourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('AADCsubnetName'))]",
+
+    "aadcVMTemplateURL": "[concat(parameters('SAURL'),'/scripts/aadc/vm.json',parameters('SASToken'))]",
+    "aadcSQLETemplateURL": "[concat(parameters('SAURL'),'/scripts/aadc/aadcSQLE.json',parameters('SASToken'))]",
+    "aadcPSSETemplateURL": "[concat(parameters('SAURL'),'/scripts/aadc/aadcPSSE.json',parameters('SASToken'))]",
+    "aadcDSCTemplateURL": "[concat(parameters('SAURL'),'/scripts/aadc/aadcConfigureviaDSC.json',parameters('SASToken'))]",
+    "vmDiagnosticsTemplateURL": "[concat(parameters('SAURL'),'/scripts/vmDiagnostics.json',parameters('SASToken'))]",
+    "vmAntimalwareTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployAntimalware.json',parameters('SASToken'))]",
+    "vmADETemplateURL": "[concat(parameters('SAURL'),'/scripts/encryptVMkek.json',parameters('SASToken'))]",
+    "vmLogAnalyticsTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployLA.json',parameters('SASToken'))]",
+
+    "aadc1VmDeployment": "[concat('Create-', parameters('aadc1VMName'))]",
+    "aadc2VmDeployment": "[concat('Create-', parameters('aadc2VMName'))]",
+    "aadc1SQLE": "[concat('ConfigureSQLExtensionOn-', parameters('aadc1VMName'))]",
+    "aadc2SQLE": "[concat('ConfigureSQLExtensionOn-', parameters('aadc2VMName'))]",
+    "aadc1SQLConfigviaPSScript": "[concat('ConfigureSQLviaPSon-', parameters('aadc1VMName'))]",
+    "aadc2SQLConfigviaPSScript": "[concat('ConfigureSQLviaPSon-', parameters('aadc2VMName'))]",
+    "aadc1SQLConfigviaDSC": "[concat('ConfigureSQLviaDSCon-', parameters('aadc1VMName'))]",
+    "aadc2SQLConfigviaDSC": "[concat('ConfigureSQLviaDSCon-', parameters('aadc2VMName'))]",
+    "deployVMDiagnosticsAADC1": "deployVMDiagnosticsAADC1",
+    "deployVMDiagnosticsAADC2": "deployVMDiagnosticsAADC2",
+    "deployAntimalwareAADC1": "deployAntimalwareAADC1",
+    "deployAntimalwareAADC2": "deployAntimalwareAADC2",
+    "deployLogAnalyticsAADC1": "deployLogAnalyticsAADC1",
+    "deployLogAnalyticsAADC2": "deployLogAnalyticsAADC2",
+    "encryptAADC1": "encryptAADC1",
+    "encryptAADC2": "encryptAADC2",
+
+    "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
+    "domainSuffix": "[split(parameters('domainName'),'.')[1]]",
+    "ouPathDomainJoinTemp": "[concat('OU=DomainJoinTemp;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+    "ouPathAdmin ": "[concat('OU=Admin;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+    "ouPathNone": "",
+
+    "aadc1NICName": "[concat('NIC-',parameters('aadc1VMName'))]",
+    "aadc2NICName": "[concat('NIC-',parameters('aadc2VMName'))]",
+
+    "diagnosticsAccountid": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/',parameters('StorageAccountRG'), '/providers/','Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-02-01",
+      "name": "[concat('pid-', parameters('usageAttributionId'))]",
+      "condition": "[not(empty(parameters('usageAttributionId')))]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
+    {
+      "name": "[parameters('aadcAvailabiltySet')]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "PlatformUpdateDomainCount": 3,
+        "PlatformFaultDomainCount": 2
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    },
+    {
+      "comments": "Deploy AADC VM1",
+      "name": "[variables('aadc1VmDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets',parameters('aadcAvailabiltySet'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('aadcVMTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "localadminUsername": {
+            "value": "[parameters('localadminUsername')]"
+          },
+          "localadminPassword": {
+            "value": "[parameters('localadminPassword')]"
+          },
+          "domainjoinUsername": {
+            "value": "[parameters('domainjoinUsername')]"
+          },
+          "domainjoinPassword": {
+            "value": "[parameters('domainjoinPassword')]"
+          },
+          "subnetResourceID": {
+            "value": "[variables('AADCsubnetID')]"
+          },
+          "windowsImageSKU": {
+            "value": "[parameters('OSVersion')]"
+          },
+          "windowsImageOffer": {
+            "value": "[parameters('licenseOffer')]"
+          },
+          "vmName": {
+            "value": "[parameters('aadc1VMName')]"
+          },
+          "vmSize": {
+            "value": "[parameters('virtualMachineSize')]"
+          },
+          "NicName": {
+            "value": "[variables('aadc1NICName')]"
+          },
+          "primaryIpAddress": {
+            "value": "[parameters('aadcVM1IPAddress')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "availabilitySetName": {
+            "value": "[parameters('aadcAvailabiltySet')]"
+          },
+          "ouPath": {
+            "value": "[variables('ouPathDomainJoinTemp')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "updateManagementTime": {
+            "value": "[parameters('updateManagementTimeADC01')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          }
+        }
+      }
+    },
+    {
+      "comments": "Deploy AADC VM2",
+      "name": "[variables('aadc2VmDeployment')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets',parameters('aadcAvailabiltySet'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('aadcVMTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "localadminUsername": {
+            "value": "[parameters('localadminUsername')]"
+          },
+          "localadminPassword": {
+            "value": "[parameters('localadminPassword')]"
+          },
+          "domainjoinUsername": {
+            "value": "[parameters('domainjoinUsername')]"
+          },
+          "domainjoinPassword": {
+            "value": "[parameters('domainjoinPassword')]"
+          },
+          "subnetResourceID": {
+            "value": "[variables('AADCsubnetID')]"
+          },
+          "windowsImageSKU": {
+            "value": "[parameters('OSVersion')]"
+          },
+          "windowsImageOffer": {
+            "value": "[parameters('licenseOffer')]"
+          },
+          "vmName": {
+            "value": "[parameters('aadc2VMName')]"
+          },
+          "vmSize": {
+            "value": "[parameters('virtualMachineSize')]"
+          },
+          "NicName": {
+            "value": "[variables('aadc2NICName')]"
+          },
+          "primaryIpAddress": {
+            "value": "[parameters('aadcVM2IPAddress')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "availabilitySetName": {
+            "value": "[parameters('aadcAvailabiltySet')]"
+          },
+          "ouPath": {
+            "value": "[variables('ouPathDomainJoinTemp')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "updateManagementTime": {
+            "value": "[parameters('updateManagementTimeADC02')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('RunSQLExtensionDeployment'), 'YES')]",
+      "comments": "ConfigureSQLExtensionOnAADC1",
+      "name": "[variables('aadc1SQLE')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc1VmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('aadcSQLETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "VMName": {
+            "value": "[parameters('aadc1VMName')]"
+          },
+          "sqlConnectivityType": {
+            "value": "[parameters('sqlConnectivityType')]"
+          },
+          "sqlPortNumber": {
+            "value": "[parameters('sqlPortNumber')]"
+          },
+          "sqlStorageDisksCount": {
+            "value": "[parameters('sqlStorageDisksCount')]"
+          },
+          "sqlStorageWorkloadType": {
+            "value": "[parameters('sqlStorageWorkloadType')]"
+          },
+          "sqlStorageDisksConfigurationType": {
+            "value": "[parameters('sqlStorageDisksConfigurationType')]"
+          },
+          "sqlStorageStartingDeviceId": {
+            "value": "[parameters('sqlStorageStartingDeviceId')]"
+          },
+          "sqlStorageDeploymentToken": {
+            "value": "[parameters('sqlStorageDeploymentToken')]"
+          },
+          "sqlAutopatchingDayOfWeek": {
+            "value": "[parameters('sqlAutopatchingDayOfWeek')]"
+          },
+          "sqlAutopatchingStartHour": {
+            "value": "[parameters('sqlAutopatchingStartHour')]"
+          },
+          "sqlAutopatchingWindowDuration": {
+            "value": "[parameters('sqlAutopatchingWindowDuration')]"
+          },
+          "sqlAuthenticationLogin": {
+            "value": "[parameters('sqlAuthenticationLogin')]"
+          },
+          "sqlAuthenticationPassword": {
+            "value": "[parameters('sqlAuthenticationPassword')]"
+          },
+          "rServicesEnabled": {
+            "value": "[parameters('rServicesEnabled')]"
+          },
+          "runSQLStorageUpdateSettings": {
+            "value": "[parameters('runSQLStorageUpdateSettings')]"
+          }
+
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('RunSQLExtensionDeployment'), 'YES')]",
+      "comments": "ConfigureSQLExtensionOnAADC2",
+      "name": "[variables('aadc2SQLE')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc2VmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('aadcSQLETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "VMName": {
+            "value": "[parameters('aadc2VMName')]"
+          },
+          "sqlConnectivityType": {
+            "value": "[parameters('sqlConnectivityType')]"
+          },
+          "sqlPortNumber": {
+            "value": "[parameters('sqlPortNumber')]"
+          },
+          "sqlStorageDisksCount": {
+            "value": "[parameters('sqlStorageDisksCount')]"
+          },
+          "sqlStorageWorkloadType": {
+            "value": "[parameters('sqlStorageWorkloadType')]"
+          },
+          "sqlStorageDisksConfigurationType": {
+            "value": "[parameters('sqlStorageDisksConfigurationType')]"
+          },
+          "sqlStorageStartingDeviceId": {
+            "value": "[parameters('sqlStorageStartingDeviceId')]"
+          },
+          "sqlStorageDeploymentToken": {
+            "value": "[parameters('sqlStorageDeploymentToken')]"
+          },
+          "sqlAutopatchingDayOfWeek": {
+            "value": "[parameters('sqlAutopatchingDayOfWeek')]"
+          },
+          "sqlAutopatchingStartHour": {
+            "value": "[parameters('sqlAutopatchingStartHour')]"
+          },
+          "sqlAutopatchingWindowDuration": {
+            "value": "[parameters('sqlAutopatchingWindowDuration')]"
+          },
+          "sqlAuthenticationLogin": {
+            "value": "[parameters('sqlAuthenticationLogin')]"
+          },
+          "sqlAuthenticationPassword": {
+            "value": "[parameters('sqlAuthenticationPassword')]"
+          },
+          "rServicesEnabled": {
+            "value": "[parameters('rServicesEnabled')]"
+          },
+          "runSQLStorageUpdateSettings": {
+            "value": "[parameters('runSQLStorageUpdateSettings')]"
+          }
+        }
+      }
+    },
+    {
+      "comments": "ConfigureSQLviaPSonAADC1",
+      "name": "[variables('aadc1SQLConfigviaPSScript')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc1SQLE')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('aadcPSSETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "VMName": {
+            "value": "[parameters('aadc1VMName')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[parameters('SAURL')]"
+          },
+          "storageAccountKeyviaKeyvault": {
+            "value": "[parameters('SAKey')]"
+          }
+        }
+      }
+    },
+    {
+      "comments": "ConfigureSQLviaPSonAADC2",
+      "name": "[variables('aadc2SQLConfigviaPSScript')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc2SQLE')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('aadcPSSETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "VMName": {
+            "value": "[parameters('aadc2VMName')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[parameters('SAURL')]"
+          },
+          "storageAccountKeyviaKeyvault": {
+            "value": "[parameters('SAKey')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('RunSQLExtensionDeployment'), 'YES')]",
+      "comments": "ConfigureSQLviaDSConAADC1",
+      "name": "[variables('aadc1SQLConfigviaDSC')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc1SQLE')]",
+        "[variables('aadc1SQLConfigviaPSScript')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('aadcDSCTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "VMName": {
+            "value": "[parameters('aadc1VMName')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[parameters('SAURL')]"
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "value": "[parameters('SASToken')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('RunSQLExtensionDeployment'), 'YES')]",
+      "comments": "ConfigureSQLviaDSConAADC2",
+      "name": "[variables('aadc2SQLConfigviaDSC')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc2SQLE')]",
+        "[variables('aadc2SQLConfigviaPSScript')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('aadcDSCTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "VMName": {
+            "value": "[parameters('aadc2VMName')]"
+          },
+          "assetLocationStorageAccount": {
+            "value": "[parameters('SAURL')]"
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "value": "[parameters('SASToken')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployVMDiagnosticsAADC1')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc1VmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmDiagnosticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[parameters('aadc1VMName')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "accountid": {
+            "value": "[variables('diagnosticsAccountid')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployVMDiagnosticsAADC2')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc2VmDeployment')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmDiagnosticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[parameters('aadc2VMName')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "accountid": {
+            "value": "[variables('diagnosticsAccountid')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployAntimalwareAADC1')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc1SQLConfigviaPSScript')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmAntimalwareTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[parameters('aadc1VMName')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployAntimalwareAADC2')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc2SQLConfigviaPSScript')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmAntimalwareTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[parameters('aadc2VMName')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployLogAnalyticsAADC1')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc1SQLConfigviaPSScript')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmLogAnalyticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[parameters('aadc1VMName')]"
+          },
+          "laworkspaceref": {
+            "value": "[parameters('laworkspaceref')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('deployLogAnalyticsAADC2')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc2SQLConfigviaPSScript')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmLogAnalyticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[parameters('aadc2VMName')]"
+          },
+          "laworkspaceref": {
+            "value": "[parameters('laworkspaceref')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('encryptAADC1')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc1SQLConfigviaPSScript')]",
+        "[variables('aadc1SQLConfigviaDSC')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmADETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[parameters('aadc1VMName')]"
+          },
+          "adeKeyVaultName": {
+            "value": "[parameters('adeKeyVaultName')]"
+          },
+          "keyVaultResourceGroup": {
+            "value": "[parameters('adeKeyVaultResourceGroup')]"
+          },
+          "kekVaultResourceGroup": {
+            "value": "[parameters('kekVaultResourceGroup')]"
+          },
+          "adeKekKeyVaultName": {
+            "value": "[parameters('adeKekKeyVaultName')]"
+          },
+          "kek-url": {
+            "value": "[parameters('kek-url')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('encryptAADC2')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('aadc2SQLConfigviaPSScript')]",
+        "[variables('aadc2SQLConfigviaDSC')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmADETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[parameters('aadc2VMName')]"
+          },
+          "adeKeyVaultName": {
+            "value": "[parameters('adeKeyVaultName')]"
+          },
+          "keyVaultResourceGroup": {
+            "value": "[parameters('adeKeyVaultResourceGroup')]"
+          },
+          "kekVaultResourceGroup": {
+            "value": "[parameters('kekVaultResourceGroup')]"
+          },
+          "adeKekKeyVaultName": {
+            "value": "[parameters('adeKekKeyVaultName')]"
+          },
+          "kek-url": {
+            "value": "[parameters('kek-url')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

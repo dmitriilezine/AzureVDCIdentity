@@ -1,0 +1,145 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adfsVMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of ADFS Server"
+      }
+    },
+    "primaryADFSserver": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of the Primary ADFS Server"
+      }
+    },
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The domain name"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the DA"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the DA"
+      }
+    },
+    "adfsSVCname": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the ADFS Service Account"
+      }
+    },
+    "assetLocationStorageAccount": {
+      "type": "string",
+      "metadata": {
+        "description": "The location of resources that the script is dependent on such as linked templates and DSC modules"
+      }
+    },
+    "storageAccountSASTokenviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SAS for the Storage account"
+      }
+    },
+    "configurationFunction": {
+      "type": "string",
+      "metadata": {
+        "description": "Configuration function for DSC deployment"
+      }
+    },
+    "ADFSServiceCert": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the trusted external Cert"
+      }
+    },
+    "ADFSGGName": {
+      "type": "string",
+      "metadata": {
+        "description": "ADFS Servers Group Name"
+      }
+    },
+    "adfswapdeploymentaccount": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the ADFS & WAP deployment account"
+      }
+    },
+    "adfswapdeploymentaccountpwd": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for ADFS & WAP deployment account"
+      }
+    }
+  },
+  "variables": {
+    "primaryADFSServerDNSName": "[concat(parameters('primaryADFSserver'),'.',parameters('domainName'))]",
+    "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
+    "domainSuffix": "[split(parameters('domainName'),'.')[1]]",
+    "CACommonName": "[concat(variables('shortDomainName'),' CA')]",
+    "ADFSDNSName": "[concat('fs.',parameters('domainName'))]",
+    "ModulesURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/DeployADFS.zip')]",
+    "ConfigurationFunction": "[parameters('configurationFunction')]",
+    "TargetDIADOU": "[concat('OU=T0-Identity,OU=T0-Servers,OU=Tier 0,OU=Admin,DC=',variables('shortDomainName'),',DC=',variables('domainSuffix'))]",
+    "ComputerDN": "[concat('CN=',parameters('adfsVMName'),',OU=Admin,DC=',variables('shortDomainName'),',DC=',variables('domainSuffix'))]"
+
+  },
+  "resources": [
+    {
+      "name": "[concat(parameters('adfsVMName'),'/InstallADFSFarm')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "properties": {
+        "publisher": "Microsoft.Powershell",
+        "type": "DSC",
+        "typeHandlerVersion": "2.8",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "modulesUrl": "[variables('ModulesURL')]",
+          "configurationFunction": "[variables('ConfigurationFunction')]",
+          "SasToken": "[parameters('storageAccountSASTokenviaKeyvault')]",
+          "properties": {
+            "domainName": "[parameters('domainName')]",
+            "CACommonName": "[variables('CACommonName')]",
+            "ADFSDNSName": "[variables('ADFSDNSName')]",
+            "ADFSServiceCert": "[parameters('ADFSServiceCert')]",
+            "TargetDIADOU": "[variables('TargetDIADOU')]",
+            "ComputerDN": "[variables('ComputerDN')]",
+            "PrimaryADFSServer": "[variables('primaryADFSServerDNSName')]",
+            "shortdomainname": "[variables('shortDomainName')]",
+            "svcADFS": "[parameters('adfsSVCname')]",
+            "ADFSGGName": "[parameters('ADFSGGName')]",
+            "ADFSServerName": "[parameters('adfsVMName')]",
+            "adfswapdeploymentaccount": "[parameters('adfswapdeploymentaccount')]",
+            "adminCreds": {
+              "userName": "[parameters('adminUserName')]",
+              "password": "PrivateSettingsRef:adminPassword"
+            },
+            "ADFSWAPDeploycreds": {
+              "userName": "[parameters('adfswapdeploymentaccount')]",
+              "password": "PrivateSettingsRef:adfswapPassword"
+            }
+          }
+        },
+        "protectedSettings": {
+          "items": {
+            "adminPassword": "[parameters('adminPassword')]",
+            "adfswapPassword": "[parameters('adfswapdeploymentaccountpwd')]",
+            "configurationUrlSasToken": "[parameters('storageAccountSASTokenviaKeyvault')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

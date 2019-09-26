@@ -1,0 +1,26 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+  "parameters": {
+    "SAURL": { "value": "pipelineProvided" },
+    "SASToken": { "value": "pipelineProvided" },
+
+    "virtualNetworkName": { "value": "vNet11" },
+    "vNetAddressRange1": { "value": "10.0.0.0/16" },
+    "vNetAddressRange2": { "value": "10.1.0.0/16" },
+    "DomainControllersSubnet": { "value": "10.0.1.0/24" },
+    "JumpServerSubnet": { "value": "10.0.2.0/24" },
+    "RDSCbGwSubnet": { "value": "10.0.3.0/24" },
+    "ADFSSubnet": { "value": "10.0.5.0/24" },
+    "WAPSubnet": { "value": "10.0.6.0/24" },
+    "RDSSessionHostSubnet": { "value": "10.0.7.0/24" },
+    "AADApProxySubnet": { "value": "10.0.8.0/24" },
+    "DNSSubnet": { "value": "10.0.10.0/24" },
+    "AADConnectSubnet": { "value": "10.0.11.0/24" },
+    "TestADDSSubnet": { "value": "10.0.12.0/24" },
+    "GatewaySubnet": { "value": "10.0.13.0/24" },
+    "BastionHostSubnet": { "value": "10.0.14.0/27" },
+    "DNSserverIPAddress": { "value": "10.0.10.10" }
+
+  }
+}

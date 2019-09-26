@@ -1,0 +1,171 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "VMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The VM name"
+      }
+    },
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The domain name"
+      }
+    },
+    "netbiosName": {
+      "type": "string",
+      "metadata": {
+        "description": "Domain Netbios name"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new VMs and Domain"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VMs and Domain"
+      }
+    },
+    "adfsSVCname": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the ADFS Service Account"
+      }
+    },
+    "domainjoinUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the account to join VM to Domain"
+      }
+    },
+    "domainjoinPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the account to join VMs to Domain"
+      }
+    },
+    "assetLocationStorageAccount": {
+      "type": "string",
+      "metadata": {
+        "description": "The location of resources that the script is dependent on such as linked templates and DSC modules"
+      }
+    },
+    "storageAccountKeyviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Key for the Storage account"
+      }
+    },
+    "ADFSGGName": {
+      "type": "string",
+      "metadata": {
+        "description": "ADFS Servers Group Name"
+      }
+    },
+    "adcsDeployment": {
+      "type": "string",
+      "metadata": {
+        "description": "Yes or No for ADCS Templates deployment"
+      }
+    },
+    "ADFSServiceCert": {
+      "type": "string",
+      "metadata": {
+        "description": "ADFS Service principal name"
+      }
+    },
+    "deployDIAD": {
+      "type": "string",
+      "metadata": {
+        "description": "Indicates if DIAD OUs and GPOs script shouild be run or not. It should not be run after the initial deployment"
+      }
+    },
+    "deployADFSgMSA": {
+      "type": "string",
+      "metadata": {
+        "description": "Yes or No for ADFS gMSA service account deployment. It must be deployed if deploying ADFS as part of this solution"
+      }
+    },
+    "deployADFSWAPDeploymentAccount": {
+      "type": "string",
+      "metadata": {
+        "description": "Yes or No for ADFS & WAP deployment service account deployment. It must be deployed if deploying ADFS as part of this solution"
+      }
+    },
+    "adfswapdeploymentaccount": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the ADFS & WAP deployment account"
+      }
+    },
+    "adfswapdeploymentaccountpwd": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for ADFS & WAP deployment account"
+      }
+    },
+    "deployDIADwith2016DCs": {
+      "type": "string",
+      "metadata": {
+        "description": "Deploy DIAD with 2016 Domain Controllers"
+      }
+    },
+    "deployDIADwith2019DCs": {
+      "type": "string",
+      "metadata": {
+        "description": "Deploy DIAD with 2019 Domain Controllers"
+      }
+    }
+  },
+  "variables": {
+    "psScriptURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/ExtendAD.ps1')]",
+    "psDIADScriptZipPackageURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/ExportImportAD.zip')]",
+    "psScriptADCSTemplatesURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/createCertTemplates.zip')]",
+
+    "shortDomainName": "[split(parameters('domainName'),'.')[0]]",
+    "domainSuffix": "[split(parameters('domainName'),'.')[1]]",
+    "domainFQDN": "[concat('DC=',variables('shortDomainName'),',DC=',variables('domainSuffix'))]",
+    "upn": "[concat(parameters('domainName'))]",
+    "Tier0ServerOperators": "Tier0ServerOperators",
+    "ADFSsvcAccount": "[parameters('adfsSVCname')]",
+    "ServiceAccountsOU": "[concat('OU=T0-Service Accounts; OU=Tier 0; OU=Admin;', 'DC=',variables('shortDomainName'),'; DC=',variables('domainSuffix'))]",
+
+    "delimiters": [ ".", "://" ],
+    "storageAccountName": "[split(parameters('assetLocationStorageAccount'),variables('delimiters'))[1]]"
+
+  },
+  "resources": [
+    {
+      "name": "[concat(parameters('VMName'),'/ExtendAD')]",
+      "comments": "deploy DIAD via Script extension",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.9",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "[variables('psScriptURL')]",
+            "[variables('psDIADScriptZipPackageURL')]",
+            "[variables('psScriptADCSTemplatesURL')]"
+          ]
+        },
+        "protectedSettings": {
+          "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File scripts/ExtendAD.ps1 -adminUsername ',parameters('adminUsername'),' -password ',parameters('adminPassword'),' -domainjoinuser ',parameters('domainjoinUsername'),' -domainjoinpassword ',parameters('domainjoinPassword'),' -DCvmName ',parameters('VMName'),' -domainname ',parameters('domainName'),' -shortname ',parameters('netbiosName'),' -domainFQDN ',variables('domainFQDN'),' -Tier0ServerOperatorsSG ',variables('Tier0ServerOperators'),' -svcADFS ',variables('ADFSsvcAccount'),' -ServiceAccountsOU ',variables('ServiceAccountsOU'),' -upn ',variables('upn'),' -ADFSGGName ',parameters('ADFSGGName'),' -deployDIAD ',parameters('deployDIAD'),' -deployADFSgMSA ',parameters('deployADFSgMSA'),' -adcsDeployment ',parameters('adcsDeployment'),' -deployADFSWAPDeploymentAccount ',parameters('deployADFSWAPDeploymentAccount'),' -adfswapdeploymentaccount ',parameters('adfswapdeploymentaccount'),' -adfswapdeploymentaccountpwd ',parameters('adfswapdeploymentaccountpwd'),' -deploy2016DCs ',parameters('deployDIADwith2016DCs'),' -deploy2019DCs ',parameters('deployDIADwith2019DCs'),' -ADFSServiceCert ',parameters('ADFSServiceCert'),'')]",
+          "storageAccountName": "[variables('storageAccountName')]",
+          "storageAccountKey": "[parameters('storageAccountKeyviaKeyvault')]"
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

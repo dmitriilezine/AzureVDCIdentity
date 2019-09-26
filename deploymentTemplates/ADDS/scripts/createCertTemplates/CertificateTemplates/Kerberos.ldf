@@ -1,0 +1,49 @@
+dn: CN=AzurePAW Kerberos,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=com
+changetype: add
+cn: AzurePAW Kerberos
+displayName: AzurePAW Kerberos
+distinguishedName: 
+ CN=AzurePAW Kerberos,CN=Certificate Templates,CN=Public Key Services,
+ CN=Services,CN=Configuration,DC=domain,DC=com
+dSCorePropagationData: 20141022031714.0Z
+dSCorePropagationData: 16010101000000.0Z
+flags: 131168
+instanceType: 4
+msPKI-Cert-Template-OID: 
+ 1.3.6.1.4.1.311.21.8.3654683.230979.10045861.9460462.11363380.18.12389798.3786
+ 847
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.2.3.5
+msPKI-Certificate-Application-Policy: 1.3.6.1.4.1.311.20.2.2
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.5.7.3.1
+msPKI-Certificate-Application-Policy: 1.3.6.1.5.5.7.3.2
+msPKI-Certificate-Name-Flag: 138412032
+msPKI-Enrollment-Flag: 32
+msPKI-Minimal-Key-Size: 2048
+msPKI-Private-Key-Flag: 84214016
+msPKI-RA-Signature: 0
+msPKI-Template-Minor-Revision: 1
+msPKI-Template-Schema-Version: 4
+name: AzurePAW Kerberos
+objectCategory: 
+ CN=PKI-Certificate-Template,CN=Schema,CN=Configuration,DC=domain,DC=com
+objectClass: top
+objectClass: pKICertificateTemplate
+pKICriticalExtensions: 2.5.29.17
+pKICriticalExtensions: 2.5.29.15
+pKIDefaultCSPs: 1,Microsoft RSA SChannel Cryptographic Provider
+pKIDefaultKeySpec: 1
+pKIExpirationPeriod:: AEA5hy7h/v8=
+pKIExtendedKeyUsage: 1.3.6.1.5.2.3.5
+pKIExtendedKeyUsage: 1.3.6.1.4.1.311.20.2.2
+pKIExtendedKeyUsage: 1.3.6.1.5.5.7.3.1
+pKIExtendedKeyUsage: 1.3.6.1.5.5.7.3.2
+pKIKeyUsage:: oAA=
+pKIMaxIssuingDepth: 0
+pKIOverlapPeriod:: AICmCv/e//8=
+revision: 100
+showInAdvancedViewOnly: TRUE
+uSNChanged: 39635
+uSNCreated: 39633
+whenChanged: 20141022031714.0Z
+whenCreated: 20141022031714.0Z
+

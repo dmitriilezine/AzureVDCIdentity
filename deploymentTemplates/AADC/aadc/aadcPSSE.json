@@ -1,0 +1,55 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "VMName": {
+      "type": "string"
+    },
+    "assetLocationStorageAccount": {
+      "type": "string"
+    },
+    "storageAccountKeyviaKeyvault": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Key for the Storage account"
+      }
+    }
+  },
+  "variables": {
+    "AADCBinaryURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/AzureADConnect.msi')]",
+    "psScriptURL": "[concat(parameters('assetLocationStorageAccount'),'/scripts/scripts/getAADC.ps1')]",
+    
+    "delimiters": [ ".", "://" ],
+    "storageAccountName": "[split(parameters('assetLocationStorageAccount'),variables('delimiters'))[1]]"
+  },
+
+  "resources": [
+
+    {
+      "name": "[concat(parameters('VMName'), '/CustomScriptExtension')]",
+      "comments": "Download AADC MSI from Repo via Script extension",
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.9",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "[variables('psScriptURL')]",
+            "[variables('AADCBinaryURL')]"
+          ]
+        },
+        "protectedSettings": {
+          "CommandToExecute": "powershell.exe -NoLogo -NoProfile -ExecutionPolicy Unrestricted -File \"./scripts/getAADC.ps1\"",
+          "storageAccountName": "[variables('storageAccountName')]",
+          "storageAccountKey": "[parameters('storageAccountKeyviaKeyvault')]"
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

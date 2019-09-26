@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "usageAttributionId": { "value": "00000000-0000-0000-0000-000000000000" },
+
+    "adminPassword": { "value": "pipelineProvided" },
+    "localadminPassword": { "value": "TpipelineProvided" },
+    "domainjoinPassword": { "value": "pipelineProvided" },
+    "SAURL": { "value": "pipelineProvided" },
+    "SASToken": { "value": "pipelineProvided" },
+
+    "domainName": { "value": "contosodev.cloud" },
+    "adminUsername": { "value": "labAdmin" },
+    "localadminUsername": { "value": "localAdmin" },
+    "domainjoinUsername": { "value": "svc-domainjoin" },
+    "CACommonName": { "value": "ContosoDevCA" },
+
+    "existingVirtualNetworkName": { "value": "vNet11" },
+    "existingVirtualNetworkResourceGroup": { "value": "usscdev-network-rg" },
+    "ADCSSubnetName": { "value": "adds" },
+    "VirtualMachineSize": { "value": "Standard_D4s_v3" },
+    "adcsVMName": { "value": "usscdevpki01" },
+    "adcsVMIPAddress": { "value": "10.0.1.20" },
+    "diagnosticsStorageAccountName": { "value": "usscdevlogdiagsa1" },
+    "StorageAccountRG": { "value": "usscdev-logging-rg" },
+
+    "adeKeyVaultName": { "value": "usscdev1-adcs-ade-akv" },
+    "adeKeyVaultResourceGroup": { "value": "usscdev-adcs-rg" },
+
+    "kekVaultResourceGroup": { "value": "Tier0AKV" },
+    "adeKekKeyVaultName": { "value": "usscdev1-ade-kek-kv" },
+    "kek-url": { "value": "<--AADC-KEK-URL-->" }
+
+  }
+}

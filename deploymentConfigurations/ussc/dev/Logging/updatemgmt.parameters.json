@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "aaname": { "value": "tier0dev-mgmtaa1" },
+    "umstartdate": { "value": "America/Chicago" },
+    "umtimezone": { "value": "America/Chicago" },
+    "existingSchedules": { "value": [ "To be changed in pipeline" ] },
+    "hubSubscriptionId": {
+      "value": [
+        "/subscriptions/<--HUB-WHEREVMS-ARE-SUBSCRIPTION-ID-->"
+      ]
+    }
+  }
+}

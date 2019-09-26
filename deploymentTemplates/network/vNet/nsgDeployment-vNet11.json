@@ -1,0 +1,1514 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the virtual network for this deployment"
+      }
+    },
+    "subnets": { "type": "array" },
+    "vNetID": { "type": "string" },
+    "dnsServerNSGName": { "type": "string" },
+    "dnsServerSubnetName": { "type": "string" },
+    "dnsServerSubnetId": { "type": "string" },
+    "beNSGName": { "type": "string" },
+    "feNSGName": { "type": "string" },
+    "pawNSGName": { "type": "string" },
+    "aadProxyNSGName": { "type": "string" },
+    "adfsNSGName": { "type": "string" },
+    "adfsProxyNSGName": { "type": "string" },
+    "beSubnetName": { "type": "string" },
+    "feSubnetName": { "type": "string" },
+    "pawSubnetName": { "type": "string" },
+    "aadProxySubnetName": { "type": "string" },
+    "adfsSubnetName": { "type": "string" },
+    "adfsProxySubnetName": { "type": "string" },
+    "beSubnetId": { "type": "string" },
+    "feSubnetId": { "type": "string" },
+    "pawSubnetId": { "type": "string" },
+    "aadProxySubnetId": { "type": "string" },
+    "adfsSubnetId": { "type": "string" },
+    "adfsProxySubnetId": { "type": "string" },
+    "rdshostsNSGName": { "type": "string" },
+    "rdshostsSubnetName": { "type": "string" },
+    "rdshostsSubnetId": { "type": "string" },
+    "aadConnectNSGName": { "type": "string" },
+    "aadConnectSubnetName": { "type": "string" },
+    "aadConnectSubnetId": { "type": "string" },
+    "testADDSNSGName": { "type": "string" },
+    "testADDSSubnetName": { "type": "string" },
+    "testADDSSubnetId": { "type": "string" },
+
+    "sourceClientIP": { "type": "string" }
+
+  },
+  "variables": {
+    "dnsServersubnetrange": "[parameters('subnets')[0].properties.addressPrefix]",
+    "besubnetrange": "[parameters('subnets')[1].properties.addressPrefix]",
+    "feSubnetRange": "[parameters('subnets')[2].properties.addressPrefix]",
+    "pawSubnetRange": "[parameters('subnets')[3].properties.addressPrefix]",
+    "adfsSubnetRange": "[parameters('subnets')[4].properties.addressPrefix]",
+    "adfsProxySubnetRange": "[parameters('subnets')[5].properties.addressPrefix]",
+    "rdshostsSubnetRange": "[parameters('subnets')[6].properties.addressPrefix]",
+    "aadProxySubnetRange": "[parameters('subnets')[7].properties.addressPrefix]",
+    "aadConnectSubnetRange": "[parameters('subnets')[8].properties.addressPrefix]",
+    "testADDSSubnetRange": "[parameters('subnets')[9].properties.addressPrefix]",
+
+    "location": "[resourceGroup().location]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('dnsServerNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "DNSServerNSG"
+      },
+      "properties": {
+        "securityRules": [
+
+          {
+            "name": "allow_RDP",
+            "properties": {
+              "description": "Allow RDP to AD Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('dnsServersubnetrange')]",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_DNS",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "53",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('dnsServersubnetrange')]",
+              "access": "Allow",
+              "priority": 101,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_DNS_udp",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "53",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('dnsServersubnetrange')]",
+              "access": "Allow",
+              "priority": 102,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_AD_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('dnsServersubnetrange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_AD_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('dnsServersubnetrange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('beNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "Domain Controllers NSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "deny_RDP_from_DMZ",
+            "properties": {
+              "description": "deny RDP to AD Servers from DMZ",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Deny",
+              "priority": 300,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_HTTP",
+            "properties": {
+              "description": "Allow HTTP Communication from ADFS",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "[variables('adfsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 118,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDP_from_RDS_Hosts_to_DCs",
+            "properties": {
+              "description": "Allow RDP to AD Servers from RDS hosts",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 119,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDP_from_JumpServer_to_DCs",
+            "properties": {
+              "description": "Allow RDP to AD Servers from Jumpserver",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_SMTP",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "25",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 121,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_WINS",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "42",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 122,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_Repl",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "135",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 123,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_NetBIOS",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "137",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 124,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_netlogin",
+            "properties": {
+              "description": "Allow AD Communication - DFSN, NetBIOS Session, NetLogon",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "139",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 125,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_LDAP",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "389",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 126,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_LDAP_udp",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "389",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 127,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_LDAPS",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "636",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 128,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_LDAP_GC",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3268-3269",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 129,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_KRB",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "88",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_KRB_udp",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "88",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 131,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_DNS",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "53",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 132,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_DNS_udp",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "53",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 133,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_445",
+            "properties": {
+              "description": "Allow AD Communication - SMB, CIFS,SMB2, DFSN, LSARPC, NbtSS, NetLogonR, SamR, SrvSvc",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "445",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 134,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_445_udp",
+            "properties": {
+              "description": "Allow AD Communication - SMB, CIFS,SMB2, DFSN, LSARPC, NbtSS, NetLogonR, SamR, SrvSvc",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "445",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 135,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_SOAP",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "9389",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 136,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_DFSR",
+            "properties": {
+              "description": "Allow AD Communication - DFSR/Sysvol",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "5722",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 137,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_KRB2",
+            "properties": {
+              "description": "Allow AD Communication - Kerberos change/set password",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "464",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 138,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_KRB2_udp",
+            "properties": {
+              "description": "Allow AD Communication - Kerberos change/set password",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "464",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 139,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_time",
+            "properties": {
+              "description": "Allow AD Communication - Windows Time Protocol",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "123",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 140,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_auth",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "137-138",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 141,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_ephemeral",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "49152-65535",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 142,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AD_ephemeral_udp",
+            "properties": {
+              "description": "Allow AD Communication",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "49152-65535",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 143,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_HTTPS_vNet",
+            "properties": {
+              "description": "Allow app proxy communication from DMZ",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 199,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_WinRM_vNet",
+            "properties": {
+              "description": "Allow WinRM sessions within the vNet",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "5985-5986",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Allow",
+              "priority": 198,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_AD_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_AD_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('besubnetrange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('feNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "FrontEndNSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow_RDP_from_PhysicalDeviceIP",
+            "properties": {
+              "description": "Allow communication from Internet to Front End",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[parameters('sourceClientIP')]",
+              "destinationAddressPrefix": "[variables('feSubnetRange')]",
+              "access": "Allow",
+              "priority": 103,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('feSubnetRange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('feSubnetRange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('pawNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "RDS CB and Gateway Subnet NSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow_RDP_from_RDS_to_RDSCon_Gateway_Servers",
+            "properties": {
+              "description": "Allow RDP to ADFS Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Allow",
+              "priority": 119,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDP_from_FrontEnd_to_RDSCBGW_Servers",
+            "properties": {
+              "description": "Allow RDP to AD Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_ADDS_to_RDSCBGW_Servers",
+            "properties": {
+              "description": "Allow ADDS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('besubnetrange')]",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Allow",
+              "priority": 121,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDSHosts_to_RDSCBGW_Servers",
+            "properties": {
+              "description": "Allow RDS Hosts",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Allow",
+              "priority": 122,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AADProxy_to_RDSCBGW_Servers",
+            "properties": {
+              "description": "Allow AADProxy Hosts",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Allow",
+              "priority": 123,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_Internal_Subnet",
+            "properties": {
+              "description": "Allow Subnet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('pawSubnetRange')]",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Allow",
+              "priority": 198,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AzureLoadBalancer",
+            "properties": {
+              "description": "Allow AzureLoadBalancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Allow",
+              "priority": 199,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('pawSubnetRange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('aadProxyNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "AAD Proxy Connector Subnet NSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow_RDP_from_RDS_to_ADDProxy_Servers",
+            "properties": {
+              "description": "Allow RDP to ADD Proxy Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 119,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDP_from_FrontEnd_to_AAD_Proxy_Servers",
+            "properties": {
+              "description": "Allow RDP to ADD Proxy Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_ADDS",
+            "properties": {
+              "description": "Allow ADDS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('besubnetrange')]",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 121,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDSHosts",
+            "properties": {
+              "description": "Allow RDS Hosts",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 122,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDSCBGW",
+            "properties": {
+              "description": "Allow RDSCBGW",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('pawSubnetRange')]",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 123,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_Internal_Subnet",
+            "properties": {
+              "description": "Allow Subnet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 198,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AzureLoadBalancer",
+            "properties": {
+              "description": "Allow AzureLoadBalancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 199,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('adfsNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "ADFS Subnet NSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow_RDP_from_RDS_to_ADFS_Servers",
+            "properties": {
+              "description": "Allow RDP to ADFS Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Allow",
+              "priority": 119,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDP_from_FrontEnd_to_ADFS_Servers",
+            "properties": {
+              "description": "Allow RDP to ADFS Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_ADDS",
+            "properties": {
+              "description": "Allow ADDS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('besubnetrange')]",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Allow",
+              "priority": 121,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_HTTP_to_ADFS_Servers",
+            "properties": {
+              "description": "Allow HTTP to ADFS Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Allow",
+              "priority": 122,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_HTTPS_to_ADFS_Servers",
+            "properties": {
+              "description": "Allow HTTP to ADFS Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Allow",
+              "priority": 123,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_Internal_Subnet",
+            "properties": {
+              "description": "Allow Subnet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('adfsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Allow",
+              "priority": 198,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AzureLoadBalancer",
+            "properties": {
+              "description": "Allow AzureLoadBalancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Allow",
+              "priority": 199,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('adfsSubnetRange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('adfsProxyNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "ADFS Proxy Subnet NSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow_RDP_from_RDS_to_ADFSProxy_Servers",
+            "properties": {
+              "description": "Allow RDP to ADFS Proxy Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('adfsProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 119,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDP_from_FrontEnd_to_ADFSProxy_Servers",
+            "properties": {
+              "description": "Allow RDP to ADFS Proxy Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('adfsProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_Internal_Subnet",
+            "properties": {
+              "description": "Allow Subnet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('adfsProxySubnetRange')]",
+              "destinationAddressPrefix": "[variables('adfsProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 198,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AzureLoadBalancer",
+            "properties": {
+              "description": "Allow AzureLoadBalancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "[variables('adfsProxySubnetRange')]",
+              "access": "Allow",
+              "priority": 199,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('adfsProxySubnetRange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('adfsProxySubnetRange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('rdshostsNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "RDS Hosts Subnet NSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow_RDP_from_JumpServer_to_RDSHosts_Servers",
+            "properties": {
+              "description": "Allow RDP to RDS Hosts Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_ADDS",
+            "properties": {
+              "description": "Allow ADDS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('besubnetrange')]",
+              "destinationAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "access": "Allow",
+              "priority": 121,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDSCBGW",
+            "properties": {
+              "description": "Allow RDSCBGW",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('pawSubnetRange')]",
+              "destinationAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "access": "Allow",
+              "priority": 122,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AADProxy",
+            "properties": {
+              "description": "Allow AADProxy",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('aadProxySubnetRange')]",
+              "destinationAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "access": "Allow",
+              "priority": 123,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_Internal_Subnet",
+            "properties": {
+              "description": "Allow Subnet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "access": "Allow",
+              "priority": 198,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AzureLoadBalancer",
+            "properties": {
+              "description": "Allow AzureLoadBalancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "access": "Allow",
+              "priority": 199,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('aadConnectNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "AAD Connect Subnet NSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow_RDP_from_RDS_to_AADConnect_Servers",
+            "properties": {
+              "description": "Allow RDP to AAD Connect Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('aadConnectSubnetRange')]",
+              "access": "Allow",
+              "priority": 119,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDP_from_JumpServer_to_AADConnect_Servers",
+            "properties": {
+              "description": "Allow RDP to AAD Connect Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('aadConnectSubnetRange')]",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_ADDS",
+            "properties": {
+              "description": "Allow ADDS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('besubnetrange')]",
+              "destinationAddressPrefix": "[variables('aadConnectSubnetRange')]",
+              "access": "Allow",
+              "priority": 121,
+              "direction": "Inbound"
+            }
+          },
+
+          {
+            "name": "allow_Internal_Subnet",
+            "properties": {
+              "description": "Allow Subnet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('aadConnectSubnetRange')]",
+              "destinationAddressPrefix": "[variables('aadConnectSubnetRange')]",
+              "access": "Allow",
+              "priority": 198,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AzureLoadBalancer",
+            "properties": {
+              "description": "Allow AzureLoadBalancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "[variables('aadConnectSubnetRange')]",
+              "access": "Allow",
+              "priority": 199,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('aadConnectSubnetRange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('aadConnectSubnetRange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('testADDSNSGName')]",
+      "location": "[variables('location')]",
+      "tags": {
+        "displayName": "Test ADDS Subnet NSG"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow_RDP_from_RDS_to_TestADDS_Servers",
+            "properties": {
+              "description": "Allow RDP to Test ADDS Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('rdshostsSubnetRange')]",
+              "destinationAddressPrefix": "[variables('testADDSSubnetRange')]",
+              "access": "Allow",
+              "priority": 119,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_RDP_from_JumpServer_to_TestADDS_Servers",
+            "properties": {
+              "description": "Allow RDP to Test ADDS Servers",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[variables('feSubnetRange')]",
+              "destinationAddressPrefix": "[variables('testADDSSubnetRange')]",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_ADDS",
+            "properties": {
+              "description": "Allow ADDS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('besubnetrange')]",
+              "destinationAddressPrefix": "[variables('testADDSSubnetRange')]",
+              "access": "Allow",
+              "priority": 121,
+              "direction": "Inbound"
+            }
+          },
+
+          {
+            "name": "allow_Internal_Subnet",
+            "properties": {
+              "description": "Allow Subnet",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[variables('testADDSSubnetRange')]",
+              "destinationAddressPrefix": "[variables('testADDSSubnetRange')]",
+              "access": "Allow",
+              "priority": 198,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "allow_AzureLoadBalancer",
+            "properties": {
+              "description": "Allow AzureLoadBalancer",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "[variables('testADDSSubnetRange')]",
+              "access": "Allow",
+              "priority": 199,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_TCP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('testADDSSubnetRange')]",
+              "access": "Deny",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "deny_Other_UDP",
+            "properties": {
+              "description": "deny remainder of Communications",
+              "protocol": "Udp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[variables('testADDSSubnetRange')]",
+              "access": "Deny",
+              "priority": 201,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    }
+
+
+  ]
+}

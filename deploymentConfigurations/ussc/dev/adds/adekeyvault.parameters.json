@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "key-vault-name": { "value": "usscdev1-adds-ade-akv" },
+    "access-policies": { "value": [] },
+    "enable-vault-for-deployment": { "value": false },
+    "enable-vault-for-diskEncryption": { "value": true },
+    "enable-vault-for-templateDeployment": { "value": false },
+    "vault-sku": { "value": "Premium" },
+    "lock-level": { "value": "None" },
+    "logs-retention-in-days": { "value": 30 },
+    "oms-workspace-resourceGroup": { "value": "tier0dev-logging-rg" },
+    "oms-workspace-name": { "value": "tier0dev-la1" },
+    "diagnostic-storageAccount-name": { "value": "usscdevlogdiagsa1" },
+    "diagnostic-storageAccount-resourceGroup": { "value": "usscdev-logging-rg" },
+    "wwsubscriptionid": { "value": "<--LA-SUBSCRIPTION-ID-->" }
+  }
+}

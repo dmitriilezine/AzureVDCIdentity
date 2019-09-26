@@ -1,0 +1,10 @@
+{
+  "tier0prefix": "tier0prd",
+  "prefix": "usscprd",
+  "location": "southcentralus",
+  "laworkspacelocation": "eastus",
+  "umtimezone": "America/Chicago",
+  "aaname": "{tier0prefix}-mgmtaa",
+  "adekv": "keyvaultWithSoftDelete.json"
+
+}

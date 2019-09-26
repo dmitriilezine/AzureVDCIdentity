@@ -1,0 +1,574 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "domain name"
+      }
+    },
+    "localadminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new VM"
+      }
+    },
+    "localadminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VM"
+      }
+    },
+    "adfsSVCname": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the ADFS Service Account"
+      }
+    },
+    "adfswapdeploymentaccount": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the ADFS & WAP deployment account"
+      }
+    },
+    "adfswapdeploymentaccountpwd": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for ADFS & WAP deployment account"
+      }
+    },
+    "existingVirtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify the name for the vNet to whcih this server will be deployed."
+      }
+    },
+    "existingVirtualNetworkRG": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing VNET resource group"
+      }
+    },
+    "WAPSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the subnet in the virtual network you want to put this VM"
+      }
+    },
+    "DepSecretsVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Key Vault where secrets are stored"
+      }
+    },
+    "DepSecretsKeyVaultRG": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the RG where Secrets Key Vault is stored"
+      }
+    },
+    "ADFSCertID": {
+      "type": "string",
+      "metadata": {
+        "description": "ADFS Cert to be deployed to WAP VMs. Certificate container and id from the AKV, for example mycertcontainer/453l4k5j3lk45jk235jl3k5j34 "
+      }
+    },
+    "ADFSServiceCert": {
+      "type": "string",
+      "metadata": {
+        "description": "Subject name of the external cert for ADFS. This must match the subject from the cert in the ADFSCertID "
+      }
+    },
+    "VirtualMachineSize": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_DS12_v2",
+        "Standard_DS2_v2",
+        "Standard_D8S_v3",
+        "Standard_D4s_v3",
+        "Standard_DS1_v2"
+      ],
+      "metadata": {
+        "description": "VM Size. The bigger it is, the more $ you will spend."
+      },
+      "defaultValue": "Standard_DS2_v2"
+    },
+    "wapVMNamePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Must be compliant with Windows Server naming convention. Actual name will be derived from this prefix and loop logic"
+      }
+    },
+    "wapVMNameLoopStart": {
+      "type": "int",
+      "metadata": {
+        "description": "Specify the digit where loop should start for creating server name. It will be appended to the wapVMNamePrefix"
+      }
+    },
+    "wapIPAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for ADFS. Actual IP will be derived from this prefix and the loop logic"
+      }
+    },
+    "wapIPAddressLoopStart": {
+      "type": "int",
+      "metadata": {
+        "description": "Specify the digit where loop should start for creating IP address. It will be appended to the wapIPAddressPrefix"
+      }
+    },
+    "ILBforWAP": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for WAP farm ILB"
+      }
+    },
+    "SAURL": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account for scripts and JSON"
+      }
+    },
+    "diagnosticsStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify storage account that will be used for VM diagnostics"
+      }
+    },
+    "StorageAccountRG": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify storage account RG"
+      }
+    },
+    "adeKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault Name used for Azure Disk Encryption for this VM. Must be in the same region as this VM"
+      }
+    },
+    "adeKeyVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "ADE Key Vault RG"
+      }
+    },
+    "wapAvailabiltySet": {
+      "type": "string",
+      "metadata": {
+        "description": "Availability Set name for WAP servers"
+      }
+    },
+    "SASToken": {
+      "type": "string",
+      "metadata": {
+        "description": "SAS Token for Storage account"
+      }
+    },
+    "ADFSServerIpAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "ADFS Server is used by WAP registration bypassing ILB"
+      }
+    },
+    "ilbWAPName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the ILB in front of WAP servers"
+      }
+    },
+    "laworkspaceref": {
+      "type": "string",
+      "metadata": {
+        "description": "log analytics reference"
+      }
+    },
+    "updateManagementTimeWAP01": {
+      "type": "string",
+      "metadata": {
+        "description": "update management schedule"
+      }
+    },
+    "updateManagementTimeWAP02": {
+      "type": "string",
+      "metadata": {
+        "description": "update management schedule"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "environment this VM is deployed at"
+      }
+    },
+    "kekVaultResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault RG"
+      }
+    },
+    "adeKekKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault name"
+      }
+    },
+    "kek-url": {
+      "type": "string",
+      "metadata": {
+        "description": "KEK Key Vault name"
+      }
+    },
+    "numberOfWAPServers": {
+      "type": "int",
+      "metadata": {
+        "description": "Number of WAP servers to be deployed in this location"
+      }
+    },
+    "deployWAPILB": {
+      "type": "string",
+      "metadata": {
+        "description": "Value Yes will deploy ILB"
+      }
+    },
+    "deployWAPAvailabilitySet": {
+      "type": "string",
+      "metadata": {
+        "description": "Value Yes will deploy AS"
+      }
+    },
+    "usageAttributionId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure partner customer usage attribution Identifier. The GUID must be previously registered."
+      }
+    },
+    "OSVersion": {
+      "type": "string",
+      "defaultValue": "2016-Datacenter",
+      "metadata": {
+        "description": "OS Version"
+      }
+    }
+  },
+  "variables": {
+
+    "wapSsubnetID": "[resourceId(parameters('existingVirtualNetworkRG'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('WAPSubnetName'))]",
+
+    "ilbTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployWAP/ilbDeployment.json',parameters('SASToken'))]",
+    "wapVMTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployWAP/vm.json',parameters('SASToken'))]",
+    "wapFarmTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployWAP/wapfarm.json',parameters('SASToken'))]",
+    "vmDiagnosticsTemplateURL": "[concat(parameters('SAURL'),'/scripts/vmDiagnostics.json',parameters('SASToken'))]",
+    "vmADETemplateURL": "[concat(parameters('SAURL'),'/scripts/encryptVMkek.json',parameters('SASToken'))]",
+    "vmAntimalwareTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployAntimalware.json',parameters('SASToken'))]",
+    "vmLogAnalyticsTemplateURL": "[concat(parameters('SAURL'),'/scripts/deployLA.json',parameters('SASToken'))]",
+
+    "configurationFunctionDSC": "DeployADFS.ps1\\InstallWebApplicationProxy",
+    "ModulesURL": "[concat(parameters('SAURL'),'/scripts/scripts/DeployADFS.zip')]",
+
+    "DepSecretskeyVaultID": "[resourceId(parameters('DepSecretsKeyVaultRG'), 'Microsoft.KeyVault/vaults', parameters('DepSecretsVaultName'))]",
+
+    "ilbWAPID": "[resourceId('Microsoft.Network/loadBalancers',parameters('ilbWAPName'))]",
+
+    "NICName": "[concat('NIC-',parameters('wapVMNamePrefix'))]",
+
+    "diagnosticsAccountid": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/',parameters('StorageAccountRG'), '/providers/','Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]"
+
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-02-01",
+      "name": "[concat('pid-', parameters('usageAttributionId'))]",
+      "condition": "[not(empty(parameters('usageAttributionId')))]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
+    {
+      "condition": "[equals(parameters('deployWAPAvailabilitySet'), 'Yes')]",
+      "name": "[parameters('wapAvailabiltySet')]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "PlatformUpdateDomainCount": 3,
+        "PlatformFaultDomainCount": 2
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    },
+    {
+      "condition": "[equals(parameters('deployWAPILB'), 'Yes')]",
+      "name": "[concat('CreateILBforWAP')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": { "uri": "[variables('ilbTemplateURL')]" },
+        "parameters": {
+          "ilbName": { "value": "[parameters('ilbWAPName')]" },
+          "subnetResourceID": { "value": "[variables('wapSsubnetID')]" },
+          "ilbPrivateIPAddress": { "value": "[parameters('ILBforWAP')]" },
+          "laworkspaceref": { "value": "[parameters('laworkspaceref')]" }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('numberOfWAPServers'),0)]",
+      "comments": "Deploy WAP VM",
+      "name": "[concat('Deploy-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[if(equals(parameters('numberOfWAPServers'),0),1,parameters('numberOfWAPServers'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets',parameters('wapAvailabiltySet'))]",
+        "[concat('CreateILBforWAP')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('wapVMTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "localadminUsername": {
+            "value": "[parameters('localadminUsername')]"
+          },
+          "localadminPassword": {
+            "value": "[parameters('localadminPassword')]"
+          },
+          "subnetResourceID": {
+            "value": "[variables('wapSsubnetID')]"
+          },
+          "windowsImageSKU": {
+            "value": "[parameters('OSVersion')]"
+          },
+          "vmName": {
+            "value": "[concat(parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+          },
+          "vmSize": {
+            "value": "[parameters('VirtualMachineSize')]"
+          },
+          "NicName": {
+            "value": "[concat(variables('NICname'), copyIndex(parameters('wapVMNameLoopStart')))]"
+          },
+          "primaryIpAddress": {
+            "value": "[concat(parameters('wapIPAddressPrefix'), copyIndex(parameters('wapIPAddressLoopStart')))]"
+          },
+          "availabilitySetName": {
+            "value": "[parameters('wapAvailabiltySet')]"
+          },
+          "keyVaultID": {
+            "value": "[variables('DepSecretskeyVaultID')]"
+          },
+          "CertForADFS": {
+            "value": "[parameters('ADFSCertID')]"
+          },
+          "ilbID": {
+            "value": "[variables('ilbWAPID')]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "updateManagementTime": {
+            "value": "[parameters('updateManagementTimeWAP01')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('numberOfWAPServers'),0)]",
+      "comments": "Install WAP Role on the WAP VM",
+      "name": "[concat('DeployWAPRole-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[if(equals(parameters('numberOfWAPServers'),0),1,parameters('numberOfWAPServers'))]"
+      },
+      "dependsOn": [
+        "[concat('Deploy-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('wapFarmTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "VMName": {
+            "value": "[concat(parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "adfsSVCname": {
+            "value": "[parameters('adfsSVCname')]"
+          },
+          "configurationFunction": {
+            "value": "[variables('configurationFunctionDSC')]"
+          },
+          "ModulesURL": {
+            "value": "[variables('ModulesURL')]"
+          },
+          "ADFSServiceCert": {
+            "value": "[parameters('ADFSServiceCert')]"
+          },
+          "ADFSServerIP": {
+            "value": "[parameters('ADFSServerIpAddress')]"
+          },
+          "storageAccountSASTokenviaKeyvault": {
+            "value": "[parameters('SASToken')]"
+          },
+          "adfswapdeploymentaccount": {
+            "value": "[parameters('adfswapdeploymentaccount')]"
+          },
+          "adfswapdeploymentaccountpwd": {
+            "value": "[parameters('adfswapdeploymentaccountpwd')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('numberOfWAPServers'),0)]",
+      "name": "[concat('DeployVMDiagnosticsOn-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[if(equals(parameters('numberOfWAPServers'),0),1,parameters('numberOfWAPServers'))]"
+      },
+      "dependsOn": [
+        "[concat('Deploy-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmDiagnosticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[concat(parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+          },
+          "diagnosticsStorageAccountName": {
+            "value": "[parameters('diagnosticsStorageAccountName')]"
+          },
+          "accountid": {
+            "value": "[variables('diagnosticsAccountid')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('numberOfWAPServers'),0)]",
+      "name": "[concat('DeployAntiMalwareOn-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[parameters('numberOfWAPServers')]"
+      },
+      "dependsOn": [
+        "[concat('Deploy-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmAntimalwareTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[concat(parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('numberOfWAPServers'),0)]",
+      "name": "[concat('DeployLogAnalyticsOn-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[if(equals(parameters('numberOfWAPServers'),0),1,parameters('numberOfWAPServers'))]"
+      },
+      "dependsOn": [
+        "[concat('Deploy-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmLogAnalyticsTemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[concat(parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+          },
+          "laworkspaceref": {
+            "value": "[parameters('laworkspaceref')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[greater(parameters('numberOfWAPServers'),0)]",
+      "name": "[concat('EncryptDisksOn-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "copy": {
+        "name": "updateLoop",
+        "count": "[if(equals(parameters('numberOfWAPServers'),0),1,parameters('numberOfWAPServers'))]"
+      },
+      "dependsOn": [
+        "[concat('DeployWAPRole-',parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vmADETemplateURL')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "vmName": {
+            "value": "[concat(parameters('wapVMNamePrefix'), copyIndex(parameters('wapVMNameLoopStart')))]"
+          },
+          "adeKeyVaultName": {
+            "value": "[parameters('adeKeyVaultName')]"
+          },
+          "keyVaultResourceGroup": {
+            "value": "[parameters('adeKeyVaultResourceGroup')]"
+          },
+          "kekVaultResourceGroup": {
+            "value": "[parameters('kekVaultResourceGroup')]"
+          },
+          "adeKekKeyVaultName": {
+            "value": "[parameters('adeKekKeyVaultName')]"
+          },
+          "kek-url": {
+            "value": "[parameters('kek-url')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
